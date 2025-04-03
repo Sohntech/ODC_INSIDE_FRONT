@@ -149,10 +149,10 @@ export default function StatisticsPage() {
               </div>
             </div>
             
-            <div className="bg-orange-50 rounded-lg p-4">
+            <div className="bg-yellow-50 rounded-lg p-4">
               <div className="flex items-center mb-2">
-                <Award className="h-5 w-5 text-orange-500 mr-2" />
-                <div className="text-sm font-medium text-orange-700">Promotions</div>
+                <Award className="h-5 w-5 text-yellow-500 mr-2" />
+                <div className="text-sm font-medium text-yellow-700">Promotions</div>
               </div>
               <div className="text-2xl font-bold text-orange-800">{stats.totalPromotions}</div>
               <div className="text-xs text-orange-600 mt-1">

@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
+import Modal from '../shared/Modal';
 import { 
   Home, 
   Users, 
@@ -15,7 +17,8 @@ import {
   QrCode,
   Coffee,
   Clipboard,
-  School
+  School,
+  AlertTriangle
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -26,7 +29,8 @@ interface SidebarProps {
 
 export default function DashboardSidebar({ isOpen, setIsOpen, userRole = 'ADMIN' }: SidebarProps) {
   const pathname = usePathname();
-  
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
   const getNavigationLinks = () => {
     // Common links for all roles
     const commonLinks = [
@@ -75,6 +79,14 @@ export default function DashboardSidebar({ isOpen, setIsOpen, userRole = 'ADMIN'
   };
 
   const links = getNavigationLinks();
+
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
+      window.location.href = '/';
+    }
+  };
 
   return (
     <>
@@ -155,13 +167,7 @@ export default function DashboardSidebar({ isOpen, setIsOpen, userRole = 'ADMIN'
           <div className="p-4 border-t">
             <button 
               className="flex items-center justify-center w-full px-4 py-2 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-              onClick={() => {
-                if (typeof window !== 'undefined') {
-                  localStorage.removeItem('accessToken');
-                  localStorage.removeItem('user');
-                  window.location.href = '/';
-                }
-              }}
+              onClick={() => setShowLogoutModal(true)}
             >
               <LogOut size={18} />
               <span className="ml-2">Déconnexion</span>
@@ -169,6 +175,44 @@ export default function DashboardSidebar({ isOpen, setIsOpen, userRole = 'ADMIN'
           </div>
         </div>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      <Modal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+      >
+        <div className="text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-yellow-100">
+            <AlertTriangle className="h-6 w-6 text-yellow-600" />
+          </div>
+          <div className="mt-3">
+            <h3 className="text-lg font-medium text-gray-900">
+              Confirmer la déconnexion
+            </h3>
+            <div className="mt-2">
+              <p className="text-sm text-gray-500">
+                Êtes-vous sûr de vouloir vous déconnecter ? Cette action vous redirigera vers la page de connexion.
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 flex justify-center space-x-3">
+            <button
+              type="button"
+              className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+              onClick={() => setShowLogoutModal(false)}
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              className="inline-flex justify-center rounded-md border border-transparent bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"
+              onClick={handleLogout}
+            >
+              Déconnexion
+            </button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
-} 
+}

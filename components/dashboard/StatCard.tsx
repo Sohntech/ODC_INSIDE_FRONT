@@ -19,6 +19,7 @@ export default function StatCard({ title, value, icon, change, suffix, loading =
   
   return (
     <div className="bg-white rounded-lg shadow-sm p-5">
+      
       {loading ? (
         <div className="animate-pulse">
           <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>

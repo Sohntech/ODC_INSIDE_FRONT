@@ -288,7 +288,8 @@ export default function AdminDashboard() {
     <div className="p-6 bg-gray-50">
       {/* Top Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-        <div className="md:col-span-2 bg-blue-500 rounded-lg shadow-lg overflow-hidden">
+        <div className="md:col-span-2 bg-blue-500 rounded-lg shadow-lg overflow-hidden"
+        >
           <div className="p-6 flex items-center justify-between">
             <div className="text-white">
               <div className="text-4xl font-bold">{loading ? '-' : stats.totalLearners}</div>

@@ -54,8 +54,10 @@ export default function LearnerCard({ learner }: LearnerCardProps) {
     <Link 
       href={`/dashboard/learners/${learner.id}`}
       className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow"
+      
     >
-      <div className="flex mb-3">
+      <div className="flex mb-3"
+      >
         <div className="mr-3">
           {learner.photoUrl ? (
             <img 

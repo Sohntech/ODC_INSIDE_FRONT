@@ -77,3 +77,10 @@ body {
 .border-sonatel-teal {
   border-color: #009682;
 }
+/* Add to your global.css file */
+.rounded-3xl {
+  border-radius: 1.5rem;
+}
+
+/* You'll need to create a pattern-bg.svg file or use a background pattern of your choice */
+/* The SVG should contain subtle curved lines similar to what's shown in the background of your image */

@@ -4,6 +4,7 @@ import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { authAPI } from '@/lib/api';
+import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,6 +12,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -60,16 +62,12 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4" 
          style={{ background: 'url(https://res.cloudinary.com/drxouwbms/image/upload/v1743682062/pattern_kldzo3.png)', backgroundSize: 'cover' }}>
       <div className="max-w-md w-full bg-white rounded-3xl shadow-lg overflow-hidden relative">
-        {/* Teal bottom curve */}
-        {/* <div className="absolute -bottom-1 left-0 z-0 right-0 h-4 bg-green-500 rounded-b-3xl"></div> */}
-        
         {/* yellow right border */}
         <div className="absolute top-0 right-0 bottom-0 w-2 bg-yellow-500 rounded-r-3xl"></div>
         
         <div className="p-8 pt-6">
           <div className="flex justify-center mb-4">
             <div className="text-center">
-              {/* <div className="text-yellow-500 font-medium text-sm mb-1">Orange Digital Center</div> */}
               <Image 
                 src="https://res.cloudinary.com/drxouwbms/image/upload/v1743507686/image_27_qtiin4.png" 
                 alt="Sonatel Logo" 
@@ -98,39 +96,56 @@ export default function LoginPage() {
             </div>
           )}
           
-          <form onSubmit={handleSubmit}>
-            <div className="mb-5">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 Login
               </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                placeholder="Matricule ou email"
-                required
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail size={18} className="text-gray-400" />
+                </div>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 bg-gray-50 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
+                  placeholder="Matricule ou email"
+                  required
+                />
+              </div>
             </div>
             
-            <div className="mb-4">
+            <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 Mot de passe
               </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                placeholder="Mot de passe"
-                required
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock size={18} className="text-gray-400" />
+                </div>
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-10 pr-10 py-3 border border-gray-300 bg-gray-50 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
+                  placeholder="Mot de passe"
+                  required
+                />
+                <button 
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
             
-            <div className="flex justify-end mb-6">
-              <a href="#" className="text-sm text-yellow-500 hover:text-yellow-600">
+            <div className="flex justify-end">
+              <a href="#" className="text-sm text-yellow-500 hover:text-yellow-600 hover:underline transition-all duration-200">
                 Mot de passe oublié ?
               </a>
             </div>
@@ -138,7 +153,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-yellow-500 text-white py-3 rounded-lg hover:bg-yellow-600 focus:outline-none transition-colors disabled:opacity-70"
+              className="w-full bg-yellow-500 text-white py-3 rounded-lg hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-600 focus:ring-offset-2 transition-all duration-200 disabled:opacity-70 font-medium shadow-sm hover:shadow-md"
             >
               {loading ? 'Connexion en cours...' : 'Se connecter'}
             </button>

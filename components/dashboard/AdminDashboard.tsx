@@ -288,7 +288,7 @@ export default function AdminDashboard() {
     <div className="p-6 bg-gray-50">
       {/* Top Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-        <div className="md:col-span-2 bg-blue-500 rounded-lg shadow-lg overflow-hidden"
+        <div className="md:col-span-2 bg-orange-500 rounded-lg shadow-lg overflow-hidden"
         >
           <div className="p-6 flex items-center justify-between">
             <div className="text-white">
@@ -302,7 +302,7 @@ export default function AdminDashboard() {
           <div className="bg-orange-600 h-1"></div>
         </div>
         
-        <div className="md:col-span-2 bg-blue-500 rounded-lg shadow-lg overflow-hidden">
+        <div className="md:col-span-2 bg-orange-500 rounded-lg shadow-lg overflow-hidden">
           <div className="p-6 flex items-center justify-between">
             <div className="text-white">
               <div className="text-4xl font-bold">{loading ? '-' : stats.totalReferentials}</div>
@@ -334,7 +334,7 @@ export default function AdminDashboard() {
               onClick={() => handleAttendanceFilterChange('today')}
               className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
                 attendanceFilter === 'today'
-                  ? 'bg-blue-500 text-white'
+                  ? 'bg-orange-500 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -344,7 +344,7 @@ export default function AdminDashboard() {
               onClick={() => handleAttendanceFilterChange('yesterday')}
               className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
                 attendanceFilter === 'yesterday'
-                  ? 'bg-blue-500 text-white'
+                  ? 'bg-orange-500 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -354,7 +354,7 @@ export default function AdminDashboard() {
               onClick={() => handleAttendanceFilterChange('week')}
               className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
                 attendanceFilter === 'week'
-                  ? 'bg-blue-500 text-white'
+                  ? 'bg-orange-500 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -364,7 +364,7 @@ export default function AdminDashboard() {
               onClick={() => handleAttendanceFilterChange('month')}
               className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
                 attendanceFilter === 'month'
-                  ? 'bg-blue-500 text-white'
+                  ? 'bg-orange-500 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -374,7 +374,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-green-500 rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-teal-500 rounded-lg shadow-lg overflow-hidden">
             <div className="p-6 flex items-center justify-between">
               <div className="text-white">
                 <div className="text-4xl font-bold">{loading ? '-' : stats.present}</div>
@@ -384,7 +384,7 @@ export default function AdminDashboard() {
                 <CheckCircle className="h-8 w-8 text-white" />
               </div>
             </div>
-            <div className="bg-green-600 h-1"></div>
+            <div className="bg-teal-600 h-1"></div>
           </div>
           
           <div className="bg-yellow-400 rounded-lg shadow-lg overflow-hidden">

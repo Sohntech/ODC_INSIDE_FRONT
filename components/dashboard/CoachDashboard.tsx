@@ -122,7 +122,7 @@ export default function CoachDashboard() {
         </Link>
         <Link 
           href="/dashboard/grades/new" 
-          className="inline-flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+          className="inline-flex items-center px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors"
         >
           <Clipboard className="mr-2 h-5 w-5" />
           Saisir des notes
@@ -165,7 +165,7 @@ export default function CoachDashboard() {
         <StatCard 
           title="Présents" 
           value={attendanceStats.present} 
-          icon={<CheckCircle className="h-8 w-8 text-green-500" />} 
+          icon={<CheckCircle className="h-8 w-8 text-teal-500" />} 
           suffix={attendanceStats.total > 0 ? `${Math.round((attendanceStats.present / attendanceStats.total) * 100)}%` : '0%'}
           loading={loading.stats}
         />
@@ -215,7 +215,7 @@ export default function CoachDashboard() {
               <div key={module.id} className="border border-gray-200 rounded-lg overflow-hidden">
                 <div className="flex items-center justify-between bg-gray-50 px-4 py-3 border-b">
                   <h3 className="font-medium text-gray-800">{module.name}</h3>
-                  <div className="bg-green-100 px-3 py-1 rounded-full text-green-800 text-sm font-medium">
+                  <div className="bg-teal-100 px-3 py-1 rounded-full text-teal-800 text-sm font-medium">
                     En cours
                   </div>
                 </div>
@@ -329,7 +329,7 @@ export default function CoachDashboard() {
                       <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                         learner.attendances?.some((a: any) => !a.isPresent) 
                           ? 'bg-orange-100 text-orange-800' 
-                          : 'bg-green-100 text-green-800'
+                          : 'bg-teal-100 text-teal-800'
                       }`}>
                         {learner.attendances?.some((a: any) => !a.isPresent) 
                           ? 'Absences' 

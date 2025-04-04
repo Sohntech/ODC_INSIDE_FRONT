@@ -72,7 +72,7 @@ export default function Header({ toggleSidebar, user: propUser }: HeaderProps) {
         <div className="flex items-center space-x-4">
           <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors">
             <Bell size={20} />
-            <span className="absolute top-1 right-1 h-2 w-2 bg-yellow-500 rounded-full"></span>
+            <span className="absolute top-1 right-1 h-2 w-2 bg-orange-500 rounded-full"></span>
           </button>
           
           <div className="relative">
@@ -90,7 +90,7 @@ export default function Header({ toggleSidebar, user: propUser }: HeaderProps) {
                     priority
                   />
                 ) : (
-                  <div className="w-full h-8 bg-yellow-500 rounded-full flex items-center justify-center text-white">
+                  <div className="w-full h-8 bg-orange-500 rounded-full flex items-center justify-center text-white">
                     {user?.email ? user.email.charAt(0).toUpperCase() : <User size={20} />}
                   </div>
                 )}

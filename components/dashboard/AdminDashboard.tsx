@@ -293,7 +293,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Stagiaires Card - Fixed Value */}
-        <div className="bg-orange-500 rounded-lg shadow-lg overflow-hidden"
+        <div className="bg-orange-500 rounded-xl shadow-lg overflow-hidden"
         style={{
           backgroundImage: "url('https://res.cloudinary.com/drxouwbms/image/upload/v1743765994/patternCard_no3lhf.png')",
           backgroundSize: "cover",
@@ -311,7 +311,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Permanent Card - Fixed Value */}
-        <div className="bg-orange-500 rounded-lg shadow-lg overflow-hidden"
+        <div className="bg-orange-500 rounded-xl shadow-lg overflow-hidden"
         style={{
           backgroundImage: "url('https://res.cloudinary.com/drxouwbms/image/upload/v1743765994/patternCard_no3lhf.png')",
           backgroundSize: "cover",
@@ -501,9 +501,9 @@ export default function AdminDashboard() {
         </div>
 
         {/* Bottom Right Card - Static Image */}
-        <div className="lg:col-span-2 bg-white rounded-lg p-6 shadow-lg border border-teal-100">
+        <div className="lg:col-span-2 bg-white rounded-lg p-6 shadow-lg border border-teal-500">
           <img
-            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/cardBottomRight-5X27I1gNaa6M6ZV1DJmTfzOrgtsXnG.png"
+            src="https://res.cloudinary.com/drxouwbms/image/upload/v1743769995/metrics_npr0b8.png"
             alt="Sonatel Statistics"
             className="w-full h-auto"
           />

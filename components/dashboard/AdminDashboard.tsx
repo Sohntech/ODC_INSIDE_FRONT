@@ -293,7 +293,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Stagiaires Card - Fixed Value */}
-        <div className="bg-orange-500 rounded-xl shadow-lg overflow-hidden"
+        <div className="bg-orange-500 rounded-xl shadow-xl overflow-hidden"
         style={{
           backgroundImage: "url('https://res.cloudinary.com/drxouwbms/image/upload/v1743765994/patternCard_no3lhf.png')",
           backgroundSize: "cover",
@@ -361,8 +361,8 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Attendance Chart */}
-        <div className="lg:col-span-2 bg-white rounded-lg p-6 shadow-lg">
+         {/* Attendance Chart */}
+         <div className="lg:col-span-2 bg-white rounded-lg p-6 shadow-lg">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-semibold">Présences statistiques</h2>
             <select
@@ -387,13 +387,12 @@ export default function AdminDashboard() {
                   <BarChart
                     data={monthlyAttendanceData}
                     margin={{ top: 5, right: 30, left: 20, bottom: 25 }}
-                    barSize={30}
-                    barGap={0}
-                    stackOffset="expand"
+                    barSize={16}
+                    barGap={2}
                   >
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="name" tick={{ fontSize: 12 }} height={40} />
-                    <YAxis tick={{ fontSize: 12 }} width={40} domain={[0, 100]} tickCount={6} />
+                    <YAxis tick={{ fontSize: 12 }} width={40} />
                     <Tooltip
                       cursor={{ fill: "rgba(0, 0, 0, 0.05)" }}
                       contentStyle={{
@@ -403,7 +402,6 @@ export default function AdminDashboard() {
                       }}
                     />
                     <Legend
-                      align="right"
                       verticalAlign="top"
                       height={36}
                       wrapperStyle={{ paddingBottom: "10px" }}
@@ -413,7 +411,7 @@ export default function AdminDashboard() {
                       name="Présence"
                       dataKey="Présence"
                       fill="#0E8D7B"
-                      radius={[0, 0, 0, 0]}
+                      radius={[4, 4, 0, 0]}
                       isAnimationActive={true}
                       animationDuration={1000}
                     />
@@ -421,7 +419,7 @@ export default function AdminDashboard() {
                       name="Retard"
                       dataKey="Retard"
                       fill="#B4E1D8"
-                      radius={[0, 0, 0, 0]}
+                      radius={[4, 4, 0, 0]}
                       isAnimationActive={true}
                       animationDuration={1000}
                     />
@@ -429,7 +427,7 @@ export default function AdminDashboard() {
                       name="Absences"
                       dataKey="Absences"
                       fill="#F7941D"
-                      radius={[0, 0, 0, 0]}
+                      radius={[4, 4, 0, 0]}
                       isAnimationActive={true}
                       animationDuration={1000}
                     />

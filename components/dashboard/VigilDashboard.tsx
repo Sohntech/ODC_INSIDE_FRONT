@@ -1,19 +1,41 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { QrCode, Clock, Users, CheckCircle, XCircle } from 'lucide-react';
-import { attendanceAPI, learnersAPI } from '@/lib/api';
+import { attendanceAPI } from '@/lib/api';
 import StatCard from '@/components/dashboard/StatCard';
 
+interface Scan {
+  id: string;
+  scanTime: string;
+  isLate: boolean;
+  learner?: {
+    firstName: string;
+    lastName: string;
+    photoUrl?: string;
+    matricule: string;
+    referential?: {
+      name: string;
+    }
+  };
+  coach?: {
+    firstName: string;
+    lastName: string;
+    photoUrl?: string;
+    matricule: string;
+  }
+}
+
 export default function VigilDashboard() {
+  // Initialize recentScans as an empty array
+  const [recentScans, setRecentScans] = useState<Scan[]>([]);
   const [attendanceStats, setAttendanceStats] = useState({
     totalLearners: 0,
     presentToday: 0,
     lateToday: 0,
     absentToday: 0,
   });
-  const [recentScans, setRecentScans] = useState<any[]>([]);
   const [loading, setLoading] = useState({
     stats: true,
     scans: true,
@@ -23,43 +45,66 @@ export default function VigilDashboard() {
     scans: '',
   });
 
+  // Combined fetch function
+  const fetchData = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Fetch both stats and scans concurrently
+      const [statsResponse, scansResponse] = await Promise.all([
+        attendanceAPI.getDailyStats(today),
+        attendanceAPI.getLatestScans()
+      ]);
+
+      // Update stats
+      setAttendanceStats({
+        totalLearners: statsResponse.total || 0,
+        presentToday: statsResponse.present || 0,
+        lateToday: statsResponse.late || 0,
+        absentToday: statsResponse.absent || 0,
+      });
+
+      // Update scans - ensure we're getting an array
+      if (Array.isArray(scansResponse?.learnerScans) || Array.isArray(scansResponse?.coachScans)) {
+        const allScans = [
+          ...(scansResponse.learnerScans || []),
+          ...(scansResponse.coachScans || [])
+        ].sort((a, b) => 
+          new Date(b.scanTime).getTime() - new Date(a.scanTime).getTime()
+        );
+        setRecentScans(allScans);
+      } else {
+        setRecentScans([]);
+        console.warn('Scans response is not in expected format:', scansResponse);
+      }
+
+      // Clear any errors
+      setError({
+        stats: '',
+        scans: ''
+      });
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+      setError({
+        stats: 'Failed to load attendance statistics',
+        scans: 'Failed to load recent scans'
+      });
+    } finally {
+      setLoading({
+        stats: false,
+        scans: false
+      });
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Get today's date in YYYY-MM-DD format
-        const today = new Date().toISOString().split('T')[0];
-        
-        // Fetch attendance stats
-        const statsResponse = await attendanceAPI.getDailyStats(today);
-        setAttendanceStats({
-          totalLearners: statsResponse.totalLearners || 0,
-          presentToday: statsResponse.present || 0,
-          lateToday: statsResponse.late || 0,
-          absentToday: statsResponse.absent || 0,
-        });
-        setLoading(prev => ({ ...prev, stats: false }));
-      } catch (err) {
-        console.error('Error fetching attendance stats:', err);
-        setError(prev => ({ ...prev, stats: 'Failed to load attendance statistics' }));
-        setLoading(prev => ({ ...prev, stats: false }));
-      }
-
-      try {
-        // Fetch recent scans
-        const scansResponse = await attendanceAPI.getLatestScans(10);
-        setRecentScans(scansResponse);
-        setLoading(prev => ({ ...prev, scans: false }));
-      } catch (err) {
-        console.error('Error fetching recent scans:', err);
-        setError(prev => ({ ...prev, scans: 'Failed to load recent scans' }));
-        setLoading(prev => ({ ...prev, scans: false }));
-      }
-    };
-
     fetchData();
+    // Set up auto-refresh
+    const interval = setInterval(fetchData, 30000); // Refresh every 30 seconds
+    return () => clearInterval(interval);
   }, []);
 
-  // Calculate percentage of present learners
+  // Calculate percentage for stats
   const presentPercentage = attendanceStats.totalLearners > 0
     ? Math.round((attendanceStats.presentToday / attendanceStats.totalLearners) * 100)
     : 0;
@@ -125,8 +170,11 @@ export default function VigilDashboard() {
         
         {loading.scans ? (
           <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-16 bg-gray-100 animate-pulse rounded-lg"></div>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div 
+                key={`loading-skeleton-${i}`} 
+                className="h-16 bg-gray-100 animate-pulse rounded-lg"
+              />
             ))}
           </div>
         ) : error.scans ? (
@@ -142,38 +190,43 @@ export default function VigilDashboard() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Apprenant</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Apprenant/Coach</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Matricule</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Heure de scan</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {recentScans.map((scan) => (
-                  <tr key={scan.id}>
+                  <tr key={`scan-${scan.id}`}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="h-10 w-10 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
-                          {scan.learner?.photoUrl ? (
+                          {scan.learner?.photoUrl || scan.coach?.photoUrl ? (
                             <img 
-                              src={scan.learner.photoUrl} 
-                              alt={`${scan.learner.firstName} ${scan.learner.lastName}`}
+                              src={scan.learner?.photoUrl || scan.coach?.photoUrl} 
+                              alt={`${scan.learner?.firstName || scan.coach?.firstName} ${scan.learner?.lastName || scan.coach?.lastName}`}
                               className="h-full w-full object-cover"
                             />
                           ) : (
                             <div className="h-full w-full flex items-center justify-center bg-orange-500 text-white text-sm font-medium">
-                              {scan.learner?.firstName?.[0]}{scan.learner?.lastName?.[0]}
+                              {(scan.learner?.firstName?.[0] || scan.coach?.firstName?.[0] || '') + 
+                               (scan.learner?.lastName?.[0] || scan.coach?.lastName?.[0] || '')}
                             </div>
                           )}
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
-                            {scan.learner?.firstName} {scan.learner?.lastName}
+                            {scan.learner?.firstName || scan.coach?.firstName} {scan.learner?.lastName || scan.coach?.lastName}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {scan.learner?.referential?.name || 'N/A'}
+                            {scan.learner?.referential?.name || 'Coach'}
                           </div>
                         </div>
                       </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {scan.learner?.matricule || scan.coach?.matricule}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
@@ -225,4 +278,4 @@ export default function VigilDashboard() {
       </div>
     </div>
   );
-} 
+}

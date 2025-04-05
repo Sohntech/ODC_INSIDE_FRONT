@@ -24,6 +24,7 @@ export default function RootLayout({
         <head>
           <script src="https://cdn.tailwindcss.com"></script>
           <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+          <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
           <style>
             {`
               .bg-sonatel-orange { background-color: #F16E00; }

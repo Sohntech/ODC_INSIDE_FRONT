@@ -1,6 +1,60 @@
 import axios from 'axios';
 import { ReactNode } from 'react';
 
+// Move these interfaces to the top of the file and export them
+export interface LearnerDetails {
+  id: string;
+  matricule: string;
+  firstName: string;
+  lastName: string;
+  address?: string;
+  gender: 'MALE' | 'FEMALE';
+  birthDate: string;
+  birthPlace: string;
+  phone: string;
+  photoUrl: string | null;
+  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'REPLACED' | 'WAITING_LIST';
+  qrCode: string;
+  userId: string;
+  refId?: string;
+  promotionId: string;
+  user: {
+    id: string;
+    email: string;
+    role: string;
+  };
+  referential: {
+    id: string;
+    name: string;
+    description: string;
+    photoUrl: string;
+  };
+  promotion: {
+    id: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+    photoUrl: string;
+    status: string;
+  };
+  attendances: Array<{
+    id: string;
+    date: string;
+    isPresent: boolean;
+    isLate: boolean;
+    scanTime: string | null;
+    justification?: string;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  }>;
+}
+
+export interface AttendanceStats {
+  present: number;
+  absent: number;
+  late: number;
+  totalDays: number;
+}
+
 // Create an Axios instance with base URL and default headers
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
@@ -153,13 +207,6 @@ export interface Kit {
   learnerId?: string;
 }
 
-export interface AttendanceStats {
-  present: number;
-  absent: number;
-  late: number;
-  totalDays: number;
-}
-
 export interface Grade {
   id: string;
   score: number;
@@ -169,6 +216,36 @@ export interface Grade {
   learnerId: string;
   module?: Module;
   learner?: Learner;
+}
+
+interface LatestScansResponse {
+  learnerScans: Array<{
+    id: string;
+    scanTime: string;
+    isLate: boolean;
+    isPresent: boolean;
+    learner: {
+      firstName: string;
+      lastName: string;
+      matricule: string;
+      photoUrl?: string;
+      referential?: {
+        name: string;
+      }
+    }
+  }>;
+  coachScans: Array<{
+    id: string;
+    scanTime: string;
+    isLate: boolean;
+    isPresent: boolean;
+    coach: {
+      firstName: string;
+      lastName: string;
+      matricule: string;
+      photoUrl?: string;
+    }
+  }>;
 }
 
 // Learners API calls
@@ -251,15 +328,42 @@ export const learnersAPI = {
     }
   },
 
-  getLearnerByEmail: async (email: string) => {
+  getLearnerByEmail: async (email: string): Promise<LearnerDetails> => {
     try {
+      // Updated to match your new backend endpoint
       const response = await api.get(`/learners/email/${email}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching learner by email:', error);
-      return null;
+      throw error;
     }
   },
+
+  // Remove or comment out getLearnerDetails since we're getting full details from email endpoint
+  // getLearnerDetails: async (id: string): Promise<LearnerDetails> => {...}
+
+  calculateAttendanceStats: (attendances: LearnerDetails['attendances']): AttendanceStats => {
+    const stats = {
+      present: 0,
+      absent: 0,
+      late: 0,
+      totalDays: attendances.length
+    };
+
+    attendances.forEach(attendance => {
+      if (attendance.isPresent) {
+        if (attendance.isLate) {
+          stats.late++;
+        } else {
+          stats.present++;
+        }
+      } else {
+        stats.absent++;
+      }
+    });
+
+    return stats;
+  }
 };
 
 // Modules API calls
@@ -416,6 +520,77 @@ export const gradesAPI = {
 };
 
 // Attendance API calls
+interface AttendanceScanResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    learner?: {
+      firstName: string;
+      lastName: string;
+      matricule: string;
+      photoUrl?: string;
+      referential?: {
+        name: string;
+      };
+    };
+    coach?: {
+      firstName: string;
+      lastName: string;
+      matricule: string;
+      photoUrl?: string;
+    };
+    scanTime: string;
+    isLate: boolean;
+    isPresent: boolean;
+  };
+}
+
+// First, add these interfaces to match your backend
+interface BaseScanResponse {
+  type: 'LEARNER' | 'COACH';
+  scanTime: Date;
+  attendanceStatus: 'PRESENT' | 'LATE' | 'ABSENT';
+  isAlreadyScanned: boolean;
+}
+
+interface LearnerScanResponse extends BaseScanResponse {
+  type: 'LEARNER';
+  learner: {
+    id: string;
+    matricule: string;
+    firstName: string;
+    lastName: string;
+    photoUrl: string | null;
+    referential: {
+      name: string;
+    } | null;
+    promotion: {
+      name: string;
+    };
+  };
+}
+
+interface CoachScanResponse extends BaseScanResponse {
+  type: 'COACH';
+  coach: {
+    id: string;
+    matricule: string;
+    firstName: string;
+    lastName: string;
+    photoUrl: string | null;
+    referential: {
+      name: string;
+    } | null;
+  };
+}
+
+type ApiScanResponse = {
+  success: boolean;
+  message: string;
+  data?: LearnerScanResponse | CoachScanResponse;
+};
+
+// Update the attendance API methods
 export const attendanceAPI = {
   getAttendanceByLearner: async (learnerId: string) => {
     try {
@@ -452,13 +627,43 @@ export const attendanceAPI = {
       throw error;
     }
   },
-  
+
   getLatestScans: async (limit: number = 10) => {
     try {
       const response = await api.get(`/attendance/scans/latest?limit=${limit}`);
-      return response.data;
+      return {
+        learnerScans: response.data.learnerScans?.map((scan: LearnerScanResponse) => ({
+          id: scan.learner.id,
+          scanTime: scan.scanTime,
+          isLate: scan.attendanceStatus === 'LATE',
+          isPresent: scan.attendanceStatus === 'PRESENT',
+          learner: {
+            firstName: scan.learner.firstName,
+            lastName: scan.learner.lastName,
+            matricule: scan.learner.matricule,
+            photoUrl: scan.learner.photoUrl,
+            referential: scan.learner.referential
+          }
+        })) || [],
+        coachScans: response.data.coachScans?.map((scan: CoachScanResponse) => ({
+          id: scan.coach.id,
+          scanTime: scan.scanTime,
+          isLate: scan.attendanceStatus === 'LATE',
+          isPresent: scan.attendanceStatus === 'PRESENT',
+          coach: {
+            firstName: scan.coach.firstName,
+            lastName: scan.coach.lastName,
+            matricule: scan.coach.matricule,
+            photoUrl: scan.coach.photoUrl
+          }
+        })) || []
+      };
     } catch (error) {
-      throw error;
+      console.error('Error fetching latest scans:', error);
+      return {
+        learnerScans: [],
+        coachScans: []
+      };
     }
   },
   
@@ -482,6 +687,62 @@ export const attendanceAPI = {
       throw error;
     }
   },
+
+  scanLearnerQR: async (matricule: string): Promise<ApiScanResponse> => {
+    try {
+      const response = await api.post('/attendance/scan/learner', { matricule });
+      const data = response.data;
+
+      if (data.isAlreadyScanned) {
+        return {
+          success: false,
+          message: 'Cette personne a déjà été scannée aujourd\'hui'
+        };
+      }
+
+      return {
+        success: true,
+        data: data,
+        message: data.attendanceStatus === 'LATE' 
+          ? 'Présence enregistrée (En retard)' 
+          : 'Présence enregistrée'
+      };
+    } catch (error: any) {
+      console.error('Error scanning learner QR:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Erreur lors du scan'
+      };
+    }
+  },
+
+  scanCoachQR: async (matricule: string): Promise<ApiScanResponse> => {
+    try {
+      const response = await api.post('/attendance/scan/coach', { matricule });
+      const data = response.data;
+
+      if (data.isAlreadyScanned) {
+        return {
+          success: false,
+          message: 'Cette personne a déjà été scannée aujourd\'hui'
+        };
+      }
+
+      return {
+        success: true,
+        data: data,
+        message: data.attendanceStatus === 'LATE' 
+          ? 'Présence enregistrée (En retard)' 
+          : 'Présence enregistrée'
+      };
+    } catch (error: any) {
+      console.error('Error scanning coach QR:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Erreur lors du scan'
+      };
+    }
+  }
 };
 
 // Promotions API calls

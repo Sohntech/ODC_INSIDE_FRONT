@@ -164,6 +164,8 @@ export interface Promotion {
 }
 
 export interface Referential {
+  category: string;
+  status: string;
   id: string;
   name: string;
   description?: string;

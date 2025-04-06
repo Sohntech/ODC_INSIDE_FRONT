@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { learnersAPI, promotionsAPI, Learner, Promotion } from '@/lib/api';
 import { Plus, Search, Filter, DownloadIcon, Users } from 'lucide-react';
 import LearnerCard from '@/components/dashboard/LearnerCard';
+import Pagination from '@/components/common/Pagination';
 
 export default function LearnersPage() {
   const [learners, setLearners] = useState<Learner[]>([]);
@@ -15,6 +16,8 @@ export default function LearnersPage() {
   const [promotionFilter, setPromotionFilter] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -86,6 +89,29 @@ export default function LearnersPage() {
     }
   };
 
+  // Add this function near your other utility functions
+  const getReferentialAlias = (referentialName: string) => {
+    switch (referentialName) {
+      case "AWS & DevOps":
+        return "AWS";
+      
+      case "Développement web/mobile":
+        return "DEV WEB/MOBILE";
+      
+      case "Assistanat Digital (Hackeuse)":
+        return "HACKEUSE";
+      
+      case "Développement data":
+        return "DEV DATA";
+      
+      case "Référent digital":
+        return "REF DIG";
+      
+      default:
+        return referentialName;
+    }
+  };
+
   // Create a helper function for status badge styling
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
@@ -120,6 +146,20 @@ export default function LearnersPage() {
       default:
         return 'Inconnu';
     }
+  };
+
+  // Calculate pagination
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredLearners.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Handle pagination changes
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
   };
 
   return (
@@ -272,96 +312,123 @@ export default function LearnersPage() {
           </Link>
         </div>
       ) : view === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredLearners.map(learner => (
-            <LearnerCard key={learner.id} learner={learner} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {currentItems.map(learner => (
+              <LearnerCard key={learner.id} learner={learner} />
+            ))}
+          </div>
+          <Pagination
+            totalItems={filteredLearners.length}
+            initialItemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+          />
+        </>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-orange-500 text-white">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                  Apprenant
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                  Matricule
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                  Contact
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                  Référentiel
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                  Promotion
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                  Statut
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredLearners.map((learner) => {
-                // Find the promotion this learner belongs to
-                const promotion = promotions.find(p => p.id === learner.promotionId);
-                
-                return (
-                  <tr key={learner.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Link href={`/dashboard/learners/${learner.id}`} className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-medium">
-                          {learner.photoUrl ? (
-                            <img 
-                              src={learner.photoUrl} 
-                              alt={`${learner.firstName} ${learner.lastName}`}
-                              className="h-10 w-10 rounded-full object-cover"
-                            />
-                          ) : (
-                            `${learner.firstName.charAt(0)}${learner.lastName.charAt(0)}`
-                          )}
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {learner.firstName} {learner.lastName}
+        <>
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-orange-500 text-white">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    Apprenant
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    Genre
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    Matricule
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    Contact
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    Référentiel
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    Promotion
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    Statut
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {currentItems.map((learner) => {
+                  // Find the promotion this learner belongs to
+                  const promotion = promotions.find(p => p.id === learner.promotionId);
+                  
+                  return (
+                    <tr key={learner.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Link href={`/dashboard/learners/${learner.id}`} className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-medium">
+                            {learner.photoUrl ? (
+                              <img 
+                                src={learner.photoUrl} 
+                                alt={`${learner.firstName} ${learner.lastName}`}
+                                className="h-10 w-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              `${learner.firstName.charAt(0)}${learner.lastName.charAt(0)}`
+                            )}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {learner.firstName} {learner.lastName}
+                            </div>
+                          </div>
+                        </Link>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">
+                          <span className={`px-2 py-1 inline-flex text-xs font-medium rounded-full ${
+                            learner.gender === 'MALE' 
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-pink-100 text-pink-800'
+                          }`}>
                             {learner.gender === 'MALE' ? 'Homme' : 'Femme'}
-                          </div>
+                          </span>
                         </div>
-                      </Link>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {learner.matricule || 'Non assigné'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{learner.phone}</div>
-                      <div className="text-sm text-gray-500">{learner.address}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className={`text-sm ${getReferentialBadgeClass(learner.referential?.name || 'Non assigné')}`}>
-                        {learner.referential?.name || 'Non assigné'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {promotion?.name || 'Non assigné'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 inline-flex text-xs font-medium rounded-lg ${getStatusBadgeClass(learner.status)}`}>
-                        {formatStatusLabel(learner.status)}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {learner.matricule || 'Non assigné'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{learner.phone}</div>
+                        <div className="text-sm text-gray-500">{learner.address}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className={`text-sm ${getReferentialBadgeClass(learner.referential?.name || 'Non assigné')}`}>
+                          {getReferentialAlias(learner.referential?.name || 'Non assigné')}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {promotion?.name || 'Non assigné'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-3 py-1 inline-flex text-xs font-medium rounded-lg ${getStatusBadgeClass(learner.status)}`}>
+                          {formatStatusLabel(learner.status)}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <Pagination
+            totalItems={filteredLearners.length}
+            initialItemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+          />
+        </>
       )}
     </div>
   );

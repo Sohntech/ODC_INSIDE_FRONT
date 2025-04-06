@@ -127,6 +127,8 @@ export interface User {
   role: 'ADMIN' | 'COACH' | 'APPRENANT' | 'RESTAURATEUR' | 'VIGIL';
 }
 
+export type LearnerStatus = 'ACTIVE' | 'WAITING' | 'ABANDONED' | 'REMPLACEMENT' | 'REPLACED';
+
 export interface Learner {
   [x: string]: any;
   email: ReactNode;
@@ -139,7 +141,7 @@ export interface Learner {
   birthPlace: string;
   phone: string;
   photoUrl?: string;
-  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'REPLACED' | 'WAITING_LIST';
+  status: LearnerStatus;
   qrCode: string;
   userId: string;
   refId?: string;
@@ -150,6 +152,7 @@ export interface Learner {
   promotion?: Promotion;
   attendances?: LearnerAttendance[];
   kit?: Kit;
+  matricule?: string;
 }
 
 export interface Promotion {

@@ -57,11 +57,70 @@ export default function LearnersPage() {
   // Status options for filter
   const statusOptions = [
     { value: 'ACTIVE', label: 'Actif' },
-    { value: 'INACTIVE', label: 'Inactif' },
-    { value: 'SUSPENDED', label: 'Suspendu' },
-    { value: 'REPLACED', label: 'Remplacé' },
-    { value: 'WAITING_LIST', label: 'Liste d\'attente' },
+    { value: 'WAITING', label: 'En attente' },
+    { value: 'ABANDONED', label: 'Abandon' },
+    { value: 'REMPLACEMENT', label: 'Remplacement' },
+    { value: 'REPLACED', label: 'Remplacé' }
   ];
+
+  // Add this function near your other utility functions
+  const getReferentialBadgeClass = (referentialName: string) => {
+    switch (referentialName) {
+      case "AWS & DevOps":
+        return "bg-orange-100 text-orange-800 px-3 py-1 w-fit  rounded-lg";
+      
+      case "Développement web/mobile":
+        return "bg-green-100 text-green-800 px-3 py-1 rounded-lg";
+      
+      case "Assistanat Digital (Hackeuse)":
+        return "bg-pink-100 text-pink-800 px-3 py-1 rounded-lg";
+      
+      case "Développement data":
+        return "bg-purple-100 text-purple-800 px-3 py-1 rounded-lg";
+      
+      case "Référent digital":
+        return "bg-blue-100 text-blue-800 px-3 py-1 rounded-lg";
+      
+      default:
+        return "bg-gray-100 text-gray-800 px-3 py-1 rounded-lg";
+    }
+  };
+
+  // Create a helper function for status badge styling
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case 'ACTIVE':
+        return 'bg-green-100 text-green-800 border border-green-200';
+      case 'WAITING':
+        return 'bg-blue-100 text-blue-800 border border-blue-200';
+      case 'ABANDONED':
+        return 'bg-red-100 text-red-800 border border-red-200';
+      case 'REMPLACEMENT':
+        return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+      case 'REPLACED':
+        return 'bg-orange-100 text-orange-800 border border-orange-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border border-gray-200';
+    }
+  };
+
+  // Update the status label formatter
+  const formatStatusLabel = (status: string) => {
+    switch (status) {
+      case 'ACTIVE':
+        return 'Actif';
+      case 'WAITING':
+        return 'En attente';
+      case 'ABANDONED':
+        return 'Abandon';
+      case 'REMPLACEMENT':
+        return 'Remplacement';
+      case 'REPLACED':
+        return 'Remplacé';
+      default:
+        return 'Inconnu';
+    }
+  };
 
   return (
     <div>
@@ -75,7 +134,7 @@ export default function LearnersPage() {
         <div className="mt-4 md:mt-0">
           <Link 
             href="/dashboard/learners/new" 
-            className="inline-flex items-center px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
           >
             <Plus size={18} className="mr-2" />
             Ajouter un apprenant
@@ -94,7 +153,7 @@ export default function LearnersPage() {
             <input
               type="text"
               placeholder="Rechercher un apprenant..."
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -103,7 +162,7 @@ export default function LearnersPage() {
           {/* Status filter */}
           <div className="w-full md:w-48">
             <select
-              className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               value={statusFilter || ''}
               onChange={(e) => setStatusFilter(e.target.value || null)}
             >
@@ -119,7 +178,7 @@ export default function LearnersPage() {
           {/* Promotion filter */}
           <div className="w-full md:w-48">
             <select
-              className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               value={promotionFilter || ''}
               onChange={(e) => setPromotionFilter(e.target.value || null)}
             >
@@ -135,7 +194,7 @@ export default function LearnersPage() {
           {/* View options */}
           <div className="flex border rounded-lg overflow-hidden">
             <button
-              className={`px-3 py-2 ${view === 'grid' ? 'bg-yellow-500 text-white' : 'bg-white text-gray-700'}`}
+              className={`px-3 py-2 ${view === 'grid' ? 'bg-orange-500 text-white' : 'bg-white text-gray-700'}`}
               onClick={() => setView('grid')}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-layout-grid">
@@ -146,7 +205,7 @@ export default function LearnersPage() {
               </svg>
             </button>
             <button
-              className={`px-3 py-2 ${view === 'list' ? 'bg-yellow-500 text-white' : 'bg-white text-gray-700'}`}
+              className={`px-3 py-2 ${view === 'list' ? 'bg-orange-500 text-white' : 'bg-white text-gray-700'}`}
               onClick={() => setView('list')}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-list">
@@ -206,7 +265,7 @@ export default function LearnersPage() {
           </p>
           <Link 
             href="/dashboard/learners/new" 
-            className="inline-flex items-center px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
           >
             <Plus size={18} className="mr-2" />
             Ajouter un apprenant
@@ -221,21 +280,24 @@ export default function LearnersPage() {
       ) : (
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-orange-500 text-white">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                   Apprenant
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                  Matricule
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                   Contact
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                   Référentiel
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                   Promotion
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                   Statut
                 </th>
               </tr>
@@ -249,7 +311,7 @@ export default function LearnersPage() {
                   <tr key={learner.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Link href={`/dashboard/learners/${learner.id}`} className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 font-medium">
+                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-medium">
                           {learner.photoUrl ? (
                             <img 
                               src={learner.photoUrl} 
@@ -271,11 +333,16 @@ export default function LearnersPage() {
                       </Link>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {learner.matricule || 'Non assigné'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{learner.phone}</div>
                       <div className="text-sm text-gray-500">{learner.address}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
+                      <div className={`text-sm ${getReferentialBadgeClass(learner.referential?.name || 'Non assigné')}`}>
                         {learner.referential?.name || 'Non assigné'}
                       </div>
                     </td>
@@ -285,17 +352,8 @@ export default function LearnersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                        ${learner.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 
-                          learner.status === 'INACTIVE' ? 'bg-gray-100 text-gray-800' : 
-                          learner.status === 'SUSPENDED' ? 'bg-yellow-100 text-yellow-800' :
-                          learner.status === 'REPLACED' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-blue-100 text-blue-800'}`}>
-                        {learner.status === 'ACTIVE' ? 'Actif' : 
-                         learner.status === 'INACTIVE' ? 'Inactif' : 
-                         learner.status === 'SUSPENDED' ? 'Suspendu' :
-                         learner.status === 'REPLACED' ? 'Remplacé' :
-                         'Liste d\'attente'}
+                      <span className={`px-3 py-1 inline-flex text-xs font-medium rounded-lg ${getStatusBadgeClass(learner.status)}`}>
+                        {formatStatusLabel(learner.status)}
                       </span>
                     </td>
                   </tr>
@@ -307,4 +365,4 @@ export default function LearnersPage() {
       )}
     </div>
   );
-} 
+}

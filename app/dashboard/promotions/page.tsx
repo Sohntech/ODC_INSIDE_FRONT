@@ -188,7 +188,6 @@ export default function PromotionsPage() {
     { value: 'ACTIVE', label: 'Active' },
     { value: 'INACTIVE', label: 'Inactive' },
     { value: 'COMPLETED', label: 'Terminée' },
-    { value: 'CANCELLED', label: 'Annulée' },
   ];
 
   return (
@@ -431,10 +430,10 @@ export default function PromotionsPage() {
                         <span 
                           key={idx} 
                           className={`px-2 py-0.5 rounded-md text-xs font-medium 
-                            ${ref.includes('DEV WEB') ? 'bg-green-100 text-green-700' : 
-                            ref.includes('REF DIG') ? 'bg-blue-100 text-blue-700' : 
-                            ref.includes('DEV DATA') ? 'bg-purple-100 text-purple-700' : 
-                            ref.includes('AWS') ? 'bg-yellow-100 text-yellow-700' : 
+                            ${ref.includes('Développement web/mobile') ? 'bg-green-100 text-green-700' : 
+                            ref.includes('Référent digital') ? 'bg-blue-100 text-blue-700' : 
+                            ref.includes('Développement data') ? 'bg-purple-100 text-purple-700' : 
+                            ref.includes('AWS & DevOps') ? 'bg-yellow-100 text-yellow-700' : 
                             'bg-pink-100 text-pink-700'}`}
                         >
                           {ref}

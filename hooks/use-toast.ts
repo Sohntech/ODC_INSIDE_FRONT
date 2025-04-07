@@ -9,11 +9,14 @@ import type {
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000000
 
+type ToastVariant = 'default' | 'success' | 'error' | 'warning' | 'destructive';
+
 type ToasterToast = ToastProps & {
   id: string
   title?: React.ReactNode
   description?: React.ReactNode
   action?: ToastActionElement
+  variant?: ToastVariant
 }
 
 const actionTypes = {
@@ -140,6 +143,12 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">
 
+interface ToastFunction {
+  (props: Toast): { id: string; dismiss: () => void; update: (props: ToasterToast) => void };
+  success: (props: Omit<Toast, 'variant'>) => { id: string; dismiss: () => void; update: (props: ToasterToast) => void };
+  error: (props: Omit<Toast, 'variant'>) => { id: string; dismiss: () => void; update: (props: ToasterToast) => void };
+}
+
 function toast({ ...props }: Toast) {
   const id = genId()
 
@@ -150,26 +159,46 @@ function toast({ ...props }: Toast) {
     })
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
 
-  dispatch({
-    type: "ADD_TOAST",
-    toast: {
-      ...props,
-      id,
-      open: true,
-      onOpenChange: (open) => {
-        if (!open) dismiss()
-      },
+  const baseToast = {
+    id,
+    open: true,
+    onOpenChange: (open: boolean) => {
+      if (!open) dismiss()
     },
-  })
-
-  return {
-    id: id,
-    dismiss,
-    update,
   }
+
+  function createToast(props: Toast) {
+    dispatch({
+      type: "ADD_TOAST",
+      toast: {
+        ...baseToast,
+        ...props,
+      },
+    })
+    return {
+      id,
+      dismiss,
+      update,
+    }
+  }
+
+  // Add success and error methods
+  const enhancedToast = createToast as ToastFunction
+  enhancedToast.success = (props: Omit<Toast, 'variant'>) =>
+    createToast({ ...props, variant: 'success' })
+  enhancedToast.error = (props: Omit<Toast, 'variant'>) =>
+    createToast({ ...props, variant: 'error' })
+
+  return enhancedToast(props)
 }
 
-function useToast() {
+interface UseToastReturnType {
+  toasts: ToasterToast[];
+  toast: ToastFunction;
+  dismiss: (toastId?: string) => void;
+}
+
+function useToast(): UseToastReturnType {
   const [state, setState] = React.useState<State>(memoryState)
 
   React.useEffect(() => {
@@ -184,9 +213,14 @@ function useToast() {
 
   return {
     ...state,
-    toast,
+    toast: Object.assign(toast, {
+      success: (props: Omit<Toast, 'variant'>) => 
+        toast({ ...props, variant: 'success' }),
+      error: (props: Omit<Toast, 'variant'>) => 
+        toast({ ...props, variant: 'error' }),
+    }) as ToastFunction,
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
   }
 }
 
-export { useToast, toast } 
+export { useToast, toast }

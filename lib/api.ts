@@ -161,9 +161,10 @@ export interface Promotion {
   startDate: string;
   endDate: string;
   photoUrl?: string;
-  status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+  status: 'ACTIVE' | 'INACTIVE';
+  learnerCount: number;
+  referentials?: string[];
   learners?: Learner[];
-  referentials?: Referential[];
 }
 
 export interface Referential {
@@ -755,8 +756,16 @@ export const promotionsAPI = {
   getAllPromotions: async () => {
     try {
       const response = await api.get('/promotions');
-      return response.data;
+      
+      // Map the response to include learner count
+      const promotions = response.data.map(promotion => ({
+        ...promotion,
+        learnerCount: promotion.learners?.length || 0
+      }));
+      
+      return promotions;
     } catch (error) {
+      console.error('Error fetching promotions:', error);
       throw error;
     }
   },
@@ -764,8 +773,14 @@ export const promotionsAPI = {
   getPromotionById: async (id: string) => {
     try {
       const response = await api.get(`/promotions/${id}`);
-      return response.data;
+      
+      // Add learner count to the promotion data
+      return {
+        ...response.data,
+        learnerCount: response.data.learners?.length || 0
+      };
     } catch (error) {
+      console.error('Error fetching promotion:', error);
       throw error;
     }
   },
@@ -775,6 +790,21 @@ export const promotionsAPI = {
       const response = await api.post('/promotions', promotionData);
       return response.data;
     } catch (error) {
+      throw error;
+    }
+  },
+
+  updatePromotionStatus: async (promotionId: string, status: 'ACTIVE' | 'INACTIVE') => {
+    try {
+      const response = await api.patch(`/promotions/${promotionId}/status`, { status });
+      
+      if (!response.data) {
+        throw new Error('No data received from server');
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error updating promotion status:', error);
       throw error;
     }
   }

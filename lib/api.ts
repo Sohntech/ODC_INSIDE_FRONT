@@ -49,7 +49,7 @@ export interface LearnerDetails {
 }
 
 export interface AttendanceStats {
-  [x: string]: any[];
+  attendance: any[];
   present: number;
   absent: number;
   late: number;
@@ -363,6 +363,7 @@ export const learnersAPI = {
 
   calculateAttendanceStats: (attendances: LearnerDetails['attendances']): AttendanceStats => {
     const stats = {
+      attendance: attendances,
       present: 0,
       absent: 0,
       late: 0,
@@ -380,7 +381,7 @@ export const learnersAPI = {
         stats.absent++;
       }
     });
-
+    return stats; // Ensure the 'attendance' property is included
     return stats;
   }
 };
@@ -800,11 +801,17 @@ export const promotionsAPI = {
     }
   },
   
-  createPromotion: async (promotionData: Partial<Promotion>) => {
+  createPromotion: async (formData: FormData) => {
     try {
-      const response = await api.post('/promotions', promotionData);
+      // Update the endpoint to match your backend controller
+      const response = await api.post('/promotions', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       return response.data;
     } catch (error) {
+      console.error('Error creating promotion:', error);
       throw error;
     }
   },

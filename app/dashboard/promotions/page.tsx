@@ -6,6 +6,7 @@ import { promotionsAPI } from '@/lib/api';
 import { Plus, Search, Calendar, Users, Clock, Check, Bookmark, ChevronLeft, ChevronRight, MoreVertical, Filter, PowerIcon, Folder, Book } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import EnhancedPromotionCard from '@/components/dashboard/EnhancedPromotionCard';
+import CreatePromotionModal from '@/components/dashboard/CreatePromotionModal';
 
 export default function PromotionsPage() {
   const [promotions, setPromotions] = useState([]);
@@ -17,6 +18,7 @@ export default function PromotionsPage() {
   const [view, setView] = useState('grid'); // 'grid' ou 'list'
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   // Liste des référentiels possibles
   const referentials = [
@@ -27,22 +29,22 @@ export default function PromotionsPage() {
     { id: 'HACKEUSE', label: 'HACKEUSE', color: 'bg-pink-100 text-pink-700' }
   ];
 
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      const promotionsData = await promotionsAPI.getAllPromotions();
+      setPromotions(promotionsData); // No more mock data enhancement
+    } catch (err) {
+      console.error('Error fetching promotions:', err);
+      setError('Une erreur est survenue lors du chargement des promotions');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError('');
-        
-        const promotionsData = await promotionsAPI.getAllPromotions();
-        setPromotions(promotionsData); // No more mock data enhancement
-      } catch (err) {
-        console.error('Error fetching promotions:', err);
-        setError('Une erreur est survenue lors du chargement des promotions');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     fetchData();
   }, []);
 
@@ -122,6 +124,26 @@ export default function PromotionsPage() {
     }
   };
 
+  const handleCreatePromotion = async (promotionData) => {
+    try {
+      await promotionsAPI.createPromotion(promotionData);
+      toast({
+        variant: "success",
+        title: "Promotion créée",
+        description: "La promotion a été créée avec succès"
+      });
+      // Refresh promotions list
+      fetchData();
+    } catch (error) {
+      console.error('Error creating promotion:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la création de la promotion"
+      });
+    }
+  };
+
   // Update the stats section in your render:
   const stats = calculateStats(filteredPromotions);
 
@@ -136,6 +158,7 @@ export default function PromotionsPage() {
         
         <div className="mt-4 md:mt-0">
           <button 
+            onClick={() => setIsModalOpen(true)}
             className="inline-flex items-center px-5 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-500 transition-colors shadow-sm font-medium"
           >
             <Plus size={18} className="mr-2" />
@@ -332,6 +355,7 @@ export default function PromotionsPage() {
               : 'Il n\'y a actuellement aucune promotion dans la base de données. Commencez par en créer une.'}
           </p>
           <button 
+            onClick={() => setIsModalOpen(true)}
             className="inline-flex items-center px-5 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors shadow-sm font-medium"
           >
             <Plus size={18} className="mr-2" />
@@ -519,6 +543,12 @@ export default function PromotionsPage() {
         </div>
       )}
       
+      <CreatePromotionModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleCreatePromotion}
+      />
+      
       {/* Footer */}
       <div className="mt-8 text-center text-gray-500 text-sm">
         © {new Date().getFullYear()} Orange Digital Center - Sonatel © 2025 Tous droits réservés.
@@ -526,3 +556,4 @@ export default function PromotionsPage() {
     </div>
   );
 }
+

@@ -1,221 +1,273 @@
-'use client';
+"use client"
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { attendanceAPI, learnersAPI, Learner, LearnerAttendance } from '@/lib/api';
-import { QrCode, Calendar, ArrowLeft, ArrowRight, Search, Download } from 'lucide-react';
+import { useState, useEffect } from "react"
+import Image from "next/image"
+import { attendanceAPI, learnersAPI, type Learner, type LearnerAttendance } from "@/lib/api"
+import { Search, Download, MoreVertical, Users, CheckCircle, Clock, AlertTriangle } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import Pagination from '@/components/common/Pagination'
+import { format } from "date-fns"
+import { fr } from "date-fns/locale"
+import { 
+  DateFilterType, 
+  AttendanceStats, 
+  DATE_FILTER_OPTIONS,
+  AttendanceRecord,
+  AttendanceFilters
+} from "./types"
+
+// First, define the status options constant at the top of the file
+const STATUS_OPTIONS = [
+  { value: 'all', label: 'Tous les statuts' },
+  { value: 'present', label: 'Présent' },
+  { value: 'late', label: 'En retard' },
+  { value: 'absent', label: 'Absent' }
+] as const;
 
 export default function AttendancePage() {
-  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [learners, setLearners] = useState<Learner[]>([]);
-  const [attendanceRecords, setAttendanceRecords] = useState<{ [key: string]: LearnerAttendance }>({});
-  const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [stats, setStats] = useState({
-    total: 0,
+  // États pour les filtres
+  const [dateFilter, setDateFilter] = useState<DateFilterType>('day')
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0])
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState("")
+
+  // États pour les données
+  const [stats, setStats] = useState<AttendanceStats>({
     present: 0,
     late: 0,
     absent: 0,
-  });
+    total: 0
+  })
+  const [attendanceRecords, setAttendanceRecords] = useState<LearnerAttendance[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+
+  // Add this near your other state declarations
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [isLoadingRecords, setIsLoadingRecords] = useState(true);
+
+  // Fonction pour charger les statistiques selon le filtre de date
+  const fetchStats = async () => {
+    try {
+      setIsLoadingStats(true);
+      let data;
+      switch (dateFilter) {
+        case 'day':
+          data = await attendanceAPI.getDailyStats(selectedDate);
+          break;
+        case 'week':
+          // Implémente la logique pour les stats hebdomadaires
+          break;
+        case 'month':
+          const [year, month] = selectedDate.split('-');
+          data = await attendanceAPI.getMonthlyStats(parseInt(year), parseInt(month));
+          break;
+        case 'year':
+          const yearOnly = selectedDate.split('-')[0];
+          data = await attendanceAPI.getYearlyStats(parseInt(yearOnly));
+          break;
+      }
+      setStats(data);
+    } catch (err) {
+      console.error('Error fetching stats:', err);
+      setError('Erreur lors du chargement des statistiques');
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
+
+  // Effet pour charger les données initiales
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError('');
-        
-        // Fetch all learners
-        const learnersData = await learnersAPI.getAllLearners();
-        setLearners(learnersData);
-        
-        // Get daily stats for selected date
-        const statsData = await attendanceAPI.getDailyStats(date);
-        setStats({
-          total: learnersData.length,
-          present: statsData.present || 0,
-          late: statsData.late || 0,
-          absent: statsData.absent || 0,
-        });
-        
-        // Simulate getting attendance records for each learner
-        // In a real app, you would fetch this from the backend
-        const records: { [key: string]: LearnerAttendance } = {};
-        
-        // Simulate some attendance data
-        learnersData.forEach(learner => {
-          const rand = Math.random();
-          if (rand < 0.7) { // Present
-            records[learner.id] = {
-              id: `attendance-${learner.id}`,
-              date,
-              learnerId: learner.id,
-              isPresent: true,
-              isLate: rand > 0.5,
-              scanTime: rand > 0.5 
-                ? new Date(`${date}T09:${Math.floor(Math.random() * 30) + 30}:00`).toISOString()
-                : new Date(`${date}T08:${Math.floor(Math.random() * 30) + 30}:00`).toISOString(),
-              status: 'PENDING',
-              justification: '',
-            };
-          } else { // Absent
-            records[learner.id] = {
-              id: `attendance-${learner.id}`,
-              date,
-              learnerId: learner.id,
-              isPresent: false,
-              isLate: false,
-              status: 'PENDING',
-              justification: '',
-            };
+
+        // First fetch stats
+        await fetchStats();
+
+        try {
+          const records = await attendanceAPI.getDailyStats(selectedDate);
+          // Convert the stats response to the expected format
+          const formattedRecords = records.attendance || [];
+          if (Array.isArray(formattedRecords)) {
+            setAttendanceRecords(formattedRecords);
+          } else {
+            console.error('Unexpected response format:', records);
+            setError('Format de réponse invalide');
           }
-        });
-        
-        setAttendanceRecords(records);
+        } catch (err: any) {
+          console.error('Error fetching attendance records:', err);
+          setError('Erreur lors du chargement des présences');
+        }
       } catch (err) {
-        console.error('Error fetching attendance data:', err);
-        setError('Une erreur est survenue lors du chargement des données de présence');
+        console.error('Error fetching data:', err);
+        setError('Une erreur est survenue lors du chargement des données');
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchData();
-  }, [date]);
+  }, [dateFilter, selectedDate]);
 
-  // Navigate to previous/next day
-  const changeDate = (amount: number) => {
-    const currentDate = new Date(date);
-    currentDate.setDate(currentDate.getDate() + amount);
-    setDate(currentDate.toISOString().split('T')[0]);
-  };
+  // Filtrage des enregistrements
+  const filteredRecords = attendanceRecords.filter(record => {
+    const nameMatch = `${record.learner.firstName} ${record.learner.lastName}`
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    
+    const statusMatch = 
+      statusFilter === 'all' || 
+      !statusFilter || 
+      (statusFilter === 'present' && record.isPresent && !record.isLate) ||
+      (statusFilter === 'late' && record.isLate) ||
+      (statusFilter === 'absent' && !record.isPresent);
 
-  // Format date for display (ex: "Lundi 15 avril 2023")
-  const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    };
-    return new Date(dateString).toLocaleDateString('fr-FR', options);
-  };
-
-  // Filter learners based on search query
-  const filteredLearners = learners.filter(learner => {
-    const fullName = `${learner.firstName} ${learner.lastName}`.toLowerCase();
-    return searchQuery === '' || fullName.includes(searchQuery.toLowerCase());
+    return nameMatch && statusMatch;
   });
+
+  // Pagination
+  const paginatedRecords = filteredRecords.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   // Handle exporting attendance data
   const handleExport = () => {
-    alert('Fonctionnalité d\'export à implémenter');
-  };
+    alert("Fonctionnalité d'export à implémenter")
+  }
 
   return (
-    <div>
+    <div className="container mx-auto px-4 py-6">
       {/* Page header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Gestion des présences</h1>
-          <p className="text-gray-600">Suivez la présence des apprenants</p>
-        </div>
-        
-        <div className="mt-4 md:mt-0">
-          <Link 
-            href="/dashboard/attendance/scan" 
-            className="inline-flex items-center px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
-          >
-            <QrCode size={18} className="mr-2" />
-            Scanner une présence
-          </Link>
-        </div>
+      <div className="flex items-center mb-6">
+        <h1 className="text-3xl font-bold text-[#0D9488]">Présences</h1>
+        <span className="ml-4 px-2 py-1 bg-[#F59E0B] text-white text-sm rounded-full">{stats.total} apprenants</span>
       </div>
-      
-      {/* Date navigation */}
-      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-        <div className="flex flex-col md:flex-row items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <button 
-              onClick={() => changeDate(-1)}
-              className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-            >
-              <ArrowLeft size={20} className="text-gray-700" />
-            </button>
-            
-            <div className="flex items-center space-x-3">
-              <Calendar className="text-gray-500" size={20} />
-              <span className="font-medium text-gray-800 capitalize">
-                {formatDate(date)}
-              </span>
+
+      {/* Stats cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <Card className="bg-orange-500 text-white">
+          <div className="p-6 flex items-center">
+            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mr-4">
+              <Users className="h-8 w-8" />
             </div>
-            
-            <button 
-              onClick={() => changeDate(1)}
-              className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-            >
-              <ArrowRight size={20} className="text-gray-700" />
-            </button>
+            <div>
+              <p className="text-4xl font-bold">{stats.total}</p>
+              <p className="text-sm">Apprenants</p>
+            </div>
           </div>
-          
-          <div className="mt-4 md:mt-0 flex items-center">
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 mr-2"
-            />
-            
-            <button
-              onClick={handleExport}
-              className="inline-flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              <Download size={18} className="mr-2" />
-              Exporter
-            </button>
+        </Card>
+
+        <Card className="bg-emerald-500 text-white">
+          <div className="p-6 flex items-center">
+            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mr-4">
+              <CheckCircle className="h-8 w-8" />
+            </div>
+            <div>
+              <p className="text-4xl font-bold">{stats.present}</p>
+              <p className="text-sm">Présence(s)</p>
+            </div>
           </div>
-        </div>
-        
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="text-lg font-bold text-gray-800">{stats.total}</div>
-            <div className="text-sm text-gray-600">Apprenants total</div>
+        </Card>
+
+        <Card className="bg-amber-500 text-white">
+          <div className="p-6 flex items-center">
+            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mr-4">
+              <Clock className="h-8 w-8" />
+            </div>
+            <div>
+              <p className="text-4xl font-bold">{stats.late}</p>
+              <p className="text-sm">Retard(s)</p>
+            </div>
           </div>
-          
-          <div className="bg-green-50 rounded-lg p-4">
-            <div className="text-lg font-bold text-green-800">{stats.present}</div>
-            <div className="text-sm text-green-600">Présents ({Math.round((stats.present / stats.total) * 100) || 0}%)</div>
+        </Card>
+
+        <Card className="bg-red-500 text-white">
+          <div className="p-6 flex items-center">
+            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mr-4">
+              <AlertTriangle className="h-8 w-8" />
+            </div>
+            <div>
+              <p className="text-4xl font-bold">{stats.absent}</p>
+              <p className="text-sm">Absence(s)</p>
+            </div>
           </div>
-          
-          <div className="bg-yellow-50 rounded-lg p-4">
-            <div className="text-lg font-bold text-yellow-800">{stats.late}</div>
-            <div className="text-sm text-yellow-600">En retard ({Math.round((stats.late / stats.total) * 100) || 0}%)</div>
-          </div>
-          
-          <div className="bg-red-50 rounded-lg p-4">
-            <div className="text-lg font-bold text-red-800">{stats.absent}</div>
-            <div className="text-sm text-red-600">Absents ({Math.round((stats.absent / stats.total) * 100) || 0}%)</div>
-          </div>
-        </div>
+        </Card>
       </div>
-      
-      {/* Search */}
-      <div className="mb-6 bg-white rounded-lg shadow-sm p-4">
-        <div className="relative">
+
+      {/* Search and filters */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        {/* Date Filter */}
+        <div className="flex gap-4">
+          <Select value={dateFilter} onValueChange={(value) => setDateFilter(value as DateFilterType)}>
+            <SelectTrigger className="w-[150px] bg-white">
+              <SelectValue placeholder="Période" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="day">Journalier</SelectItem>
+              <SelectItem value="week">Hebdomadaire</SelectItem>
+              <SelectItem value="month">Mensuel</SelectItem>
+              <SelectItem value="year">Annuel</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="w-[200px] bg-white"
+          />
+        </div>
+
+        {/* Search */}
+        <div className="relative flex-grow">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search size={18} className="text-gray-400" />
+            <Search className="h-5 w-5 text-gray-400" />
           </div>
-          <input
+          <Input
             type="text"
             placeholder="Rechercher un apprenant..."
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+            className="pl-10 bg-white"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
+
+        {/* Status Filter */}
+        <Select value={statusFilter || 'all'} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full md:w-[200px] bg-white">
+            <SelectValue placeholder="Filtre par status" />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_OPTIONS.map(option => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Export Button */}
+        <Button
+          variant="default"
+          className="bg-orange-500 hover:bg-orange-600 text-white"
+          onClick={handleExport}
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Exporter
+        </Button>
       </div>
-      
+
       {/* Attendance table */}
       {loading ? (
         <div className="bg-white rounded-lg shadow-sm p-4 animate-pulse">
@@ -225,138 +277,204 @@ export default function AttendancePage() {
           ))}
         </div>
       ) : error ? (
-        <div className="bg-red-50 text-red-600 p-4 rounded-lg">
-          {error}
-        </div>
-      ) : filteredLearners.length === 0 ? (
+        <div className="bg-red-50 text-red-600 p-4 rounded-lg">{error}</div>
+      ) : filteredRecords.length === 0 ? (
         <div className="bg-white rounded-lg shadow-sm p-8 text-center">
           <h3 className="text-lg font-medium text-gray-800 mb-2">Aucun apprenant trouvé</h3>
           <p className="text-gray-600">
-            {searchQuery
-              ? 'Aucun apprenant ne correspond à votre recherche'
-              : 'Il n\'y a actuellement aucun apprenant dans la base de données'}
+            {searchQuery || statusFilter
+              ? "Aucun apprenant ne correspond à vos critères de recherche"
+              : "Il n'y a actuellement aucun apprenant dans la base de données"}
           </p>
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-[#F97316]">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Apprenant
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase">
+                    Photo
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase">
+                    Matricule
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase">
+                    Nom Complet
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase">
+                    Adresse
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase">
+                    Date & Heure
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase">
                     Référentiel
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase">
                     Statut
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Heure d'arrivée
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase">
                     Justification
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase">
+                    Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredLearners.map((learner) => {
-                  const attendance = attendanceRecords[learner.id];
-                  return (
-                    <tr key={learner.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 font-medium">
-                            {learner.photoUrl ? (
-                              <img 
-                                src={learner.photoUrl} 
-                                alt={`${learner.firstName} ${learner.lastName}`}
-                                className="h-10 w-10 rounded-full object-cover"
-                              />
-                            ) : (
-                              `${learner.firstName.charAt(0)}${learner.lastName.charAt(0)}`
-                            )}
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {learner.firstName} {learner.lastName}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {learner.referential?.name || 'Non assigné'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {attendance ? (
-                          attendance.isPresent ? (
-                            attendance.isLate ? (
-                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                En retard
-                              </span>
-                            ) : (
-                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                Présent
-                              </span>
-                            )
-                          ) : (
-                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                              Absent
-                            </span>
-                          )
+                {paginatedRecords.map((record) => (
+                  <tr key={record.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="h-10 w-10 rounded-full bg-gray-200 overflow-hidden">
+                        {record.learner.photoUrl ? (
+                          <Image
+                            src={record.learner.photoUrl}
+                            alt={`${record.learner.firstName} ${record.learner.lastName}`}
+                            width={40}
+                            height={40}
+                            className="h-10 w-10 object-cover"
+                          />
                         ) : (
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                            Non enregistré
+                          <div className="h-full w-full flex items-center justify-center text-gray-500 font-medium">
+                            {record.learner.firstName?.charAt(0)}
+                            {record.learner.lastName?.charAt(0)}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                      {record.learner.matricule || "-"}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                      {record.learner.firstName} {record.learner.lastName}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                      {record.learner.address || "-"}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                      {record.scanTime
+                        ? new Date(record.scanTime).toLocaleTimeString("fr-FR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "-"}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        record.learner.referential?.name === "DEV WEB/MOBILE"
+                          ? "bg-green-100 text-green-800"
+                          : record.learner.referential?.name === "REF DIG"
+                            ? "bg-blue-100 text-blue-800"
+                            : record.learner.referential?.name === "DEV DATA"
+                              ? "bg-purple-100 text-purple-800"
+                              : record.learner.referential?.name === "AWS"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : record.learner.referential?.name === "HACKEUSE"
+                                  ? "bg-pink-100 text-pink-800"
+                                  : "bg-gray-100 text-gray-800"
+                      }`}>
+                        {record.learner.referential?.name || "Non assigné"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {record.isPresent ? (
+                        record.isLate ? (
+                          <span className="px-2 py-1 text-xs rounded-full bg-amber-500 text-white">
+                            Retard
                           </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {attendance && attendance.scanTime 
-                          ? new Date(attendance.scanTime).toLocaleTimeString('fr-FR', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })
-                          : '-'
-                        }
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {attendance && attendance.justification ? (
-                          <div className="flex items-center">
-                            <span className="text-sm text-gray-900 truncate max-w-xs">
-                              {attendance.justification}
-                            </span>
-                            <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
-                              attendance.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
-                              attendance.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
-                              {attendance.status === 'APPROVED' ? 'Approuvée' :
-                               attendance.status === 'REJECTED' ? 'Rejetée' :
-                               'En attente'}
-                            </span>
-                          </div>
-                        ) : attendance && !attendance.isPresent ? (
-                          <Link 
-                            href={`/dashboard/attendance/justify/${learner.id}?date=${date}`}
-                            className="text-yellow-500 hover:text-yellow-700 text-sm"
-                          >
-                            Ajouter une justification
-                          </Link>
                         ) : (
-                          '-'
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
+                          <span className="px-2 py-1 text-xs rounded-full bg-emerald-500 text-white">
+                            Présent
+                          </span>
+                        )
+                      ) : (
+                        <span className="px-2 py-1 text-xs rounded-full bg-red-500 text-white">
+                          Absent
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {record.status === "PENDING" ? (
+                        <span className="px-2 py-1 text-xs rounded-full bg-amber-500 text-white">
+                          En attente
+                        </span>
+                      ) : record.status === "ACCEPTED" ? (
+                        <span className="px-2 py-1 text-xs rounded-full bg-emerald-500 text-white">
+                          Justifié
+                        </span>
+                      ) : record.status === "REJECTED" ? (
+                        <span className="px-2 py-1 text-xs rounded-full bg-red-500 text-white">
+                          Non justifié
+                        </span>
+                      ) : (
+                        <span className="px-2 py-1 text-xs rounded-full bg-gray-500 text-white">
+                          -
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                            <span className="sr-only">Menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>Voir détails</DropdownMenuItem>
+                          <DropdownMenuItem>Modifier</DropdownMenuItem>
+                          {!record.isPresent && <DropdownMenuItem>Justifier absence</DropdownMenuItem>}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200">
+            <div className="flex items-center text-sm text-gray-700">
+              <span>Apprenants/page</span>
+              <Select
+                value={itemsPerPage.toString()}
+                onValueChange={(value) => {
+                  setItemsPerPage(Number(value))
+                  setCurrentPage(1)
+                }}
+              >
+                <SelectTrigger className="w-[70px] h-8 ml-2">
+                  <SelectValue placeholder="10" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[5, 10, 20, 50].map(value => (
+                    <SelectItem key={value} value={value.toString()}>
+                      {value}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Replace with our custom Pagination component */}
+            <Pagination
+              totalItems={filteredRecords.length}
+              initialItemsPerPage={itemsPerPage}
+              onPageChange={(page) => setCurrentPage(page)}
+              onItemsPerPageChange={(newItemsPerPage) => {
+                setItemsPerPage(newItemsPerPage)
+                setCurrentPage(1)
+              }}
+            />
+          </div>
         </div>
       )}
+
+      {/* Footer */}
+      <div className="mt-6 text-center text-sm text-gray-500">© 2025 Orange Digital Center. Tous droits réservés.</div>
     </div>
-  );
-} 
+  )
+}
+

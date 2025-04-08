@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { promotionsAPI } from '@/lib/api';
-import { Plus, Search, Calendar, Users, Clock, Check, Bookmark, ChevronLeft, ChevronRight, MoreVertical, Filter, PowerIcon } from 'lucide-react';
+import { Plus, Search, Calendar, Users, Clock, Check, Bookmark, ChevronLeft, ChevronRight, MoreVertical, Filter, PowerIcon, Folder, Book } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import EnhancedPromotionCard from '@/components/dashboard/EnhancedPromotionCard';
 
@@ -81,7 +81,8 @@ export default function PromotionsPage() {
   // Options de statut pour le filtre
   const statusOptions = [
     { value: 'ACTIVE', label: 'Active' },
-    { value: 'INACTIVE', label: 'Inactive' }
+    { value: 'INACTIVE', label: 'inactive' },
+   
   ];
 
   const togglePromotionStatus = async (promotionId: string, currentStatus: string) => {
@@ -129,16 +130,16 @@ export default function PromotionsPage() {
       {/* En-tête de la page */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Promotion</h1>
-          <p className="text-gray-600 mt-1">{stats.totalLearners} apprenants au total</p>
+          <h1 className="text-3xl font-bold text-teal-600">Promotion</h1>
+          <p className="text-gray-600 mt-1"> Gérer les promotions de l'école</p>
         </div>
         
         <div className="mt-4 md:mt-0">
           <button 
-            className="inline-flex items-center px-5 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors shadow-sm font-medium"
+            className="inline-flex items-center px-5 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-500 transition-colors shadow-sm font-medium"
           >
             <Plus size={18} className="mr-2" />
-            Ajouter promotion
+            Ajouter une promotion
           </button>
         </div>
       </div>
@@ -180,7 +181,7 @@ export default function PromotionsPage() {
               <div className="text-sm mt-1">Référentiels</div>
             </div>
             <div className="bg-white rounded-full p-3">
-              <Bookmark className="h-8 w-8 text-orange-500" />
+              <Book className="h-8 w-8 text-orange-500" />
             </div>
           </div>
         </div>
@@ -220,7 +221,7 @@ export default function PromotionsPage() {
               <div className="text-sm mt-1">Total promotions</div>
             </div>
             <div className="bg-white rounded-full p-3">
-              <Clock className="h-8 w-8 text-orange-500" />
+              <Folder className="h-8 w-8 text-orange-500" />
             </div>
           </div>
         </div>
@@ -244,7 +245,7 @@ export default function PromotionsPage() {
         
         {/* Filtres */}
         <div className="flex gap-4">
-          <div className="w-48">
+          {/* <div className="w-48">
             <select
               className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               value={classFilter || ''}
@@ -257,7 +258,7 @@ export default function PromotionsPage() {
                 </option>
               ))}
             </select>
-          </div>
+          </div> */}
           
           <div className="w-48">
             <select
@@ -265,7 +266,7 @@ export default function PromotionsPage() {
               value={statusFilter || ''}
               onChange={(e) => setStatusFilter(e.target.value || null)}
             >
-              <option value="">Filtre par status</option>
+              <option value="">Tous</option>
               {statusOptions.map(option => (
                 <option key={option.value} value={option.value}>
                   {option.label}
@@ -338,7 +339,7 @@ export default function PromotionsPage() {
           </button>
         </div>
       ) : view === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {currentItems.map(promotion => (
             <EnhancedPromotionCard 
               key={promotion.id} 

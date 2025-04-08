@@ -5,6 +5,41 @@ import { useParams, useRouter } from "next/navigation"
 import { learnersAPI, type Learner, type AttendanceStats } from "@/lib/api"
 import { Calendar, CheckCircle, Clock, Edit, AlertTriangle, ArrowLeft } from "lucide-react"
 
+// Add these helper functions at the top of your component
+const getReferentialBadgeClass = (referentialName: string) => {
+  switch (referentialName) {
+    case "AWS & DevOps":
+      return "bg-orange-100 text-orange-800";
+    case "Développement web/mobile":
+      return "bg-green-100 text-green-800";
+    case "Assistanat Digital (Hackeuse)":
+      return "bg-pink-100 text-pink-800";
+    case "Développement data":
+      return "bg-purple-100 text-purple-800";
+    case "Référent digital":
+      return "bg-blue-100 text-blue-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
+
+const getReferentialAlias = (referentialName: string) => {
+  switch (referentialName) {
+    case "AWS & DevOps":
+      return "AWS";
+    case "Développement web/mobile":
+      return "DEV WEB/MOBILE";
+    case "Assistanat Digital (Hackeuse)":
+      return "HACKEUSE";
+    case "Développement data":
+      return "DEV DATA";
+    case "Référent digital":
+      return "REF DIG";
+    default:
+      return referentialName || "Non assigné";
+  }
+};
+
 export default function LearnerDetailsPage() {
   const { id } = useParams()
   const learnerId = Array.isArray(id) ? id[0] : id
@@ -163,8 +198,12 @@ export default function LearnerDetailsPage() {
                     <h1 className="text-2xl font-bold text-gray-800">
                       {learner.firstName} {learner.lastName}
                     </h1>
-                    <div className="mt-1 inline-block px-3 py-1 bg-teal-100 text-teal-800 text-sm font-medium rounded-full">
-                      DEV WEB/MOBILE
+                    <div className="mt-1">
+                      <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-lg ${
+                        getReferentialBadgeClass(learner.referential?.name)
+                      }`}>
+                        {getReferentialAlias(learner.referential?.name)}
+                      </span>
                     </div>
                   </div>
                 </div>

@@ -49,6 +49,7 @@ export interface LearnerDetails {
 }
 
 export interface AttendanceStats {
+  [x: string]: any[];
   present: number;
   absent: number;
   late: number;
@@ -163,18 +164,18 @@ export interface Promotion {
   photoUrl?: string;
   status: 'ACTIVE' | 'INACTIVE';
   learnerCount: number;
-  referentials?: string[];
+  referentials: Referential[]; // Change from string[] to Referential[]
   learners?: Learner[];
 }
 
 export interface Referential {
-  category: string;
-  status: string;
   id: string;
   name: string;
   description?: string;
   photoUrl?: string;
   capacity: number;
+  category: string;
+  status: string;
   learners?: Learner[];
   modules?: Module[];
 }
@@ -193,15 +194,27 @@ export interface Module {
 
 export interface LearnerAttendance {
   id: string;
+  learnerId: string;
   date: string;
+  scanTime?: string;
   isPresent: boolean;
   isLate: boolean;
-  scanTime?: string;
+  status?: 'PENDING' | 'ACCEPTED' | 'REJECTED';
   justification?: string;
-  justificationComment?: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
   documentUrl?: string;
-  learnerId: string;
+  justificationComment?: string;
+  learner: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    matricule?: string;
+    photoUrl?: string;
+    address?: string;
+    referential?: {
+      id: string;
+      name: string;
+    };
+  };
 }
 
 export interface Kit {
@@ -440,13 +453,9 @@ export const referentialsAPI = {
     }
   },
   
-  getReferentialById: async (id: string) => {
-    try {
-      const response = await api.get(`/referentials/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+  getReferentialById: async (id: string): Promise<Referential> => {
+    const response = await api.get(`/referentials/${id}?include=modules,learners`);
+    return response.data;
   },
   
   createReferential: async (referentialData: Partial<Referential>) => {
@@ -607,31 +616,25 @@ export const attendanceAPI = {
     }
   },
   
-  getDailyStats: async (date: string) => {
-    try {
-      const response = await api.get(`/attendance/stats/daily?date=${date}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+  getDailyStats: async (date: string): Promise<AttendanceStats> => {
+    const response = await api.get('/attendance/stats/daily', {
+      params: { date }
+    });
+    return response.data;
   },
-  
+
   getMonthlyStats: async (year: number, month: number) => {
-    try {
-      const response = await api.get(`/attendance/stats/monthly?year=${year}&month=${month}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.get('/attendance/stats/monthly', {
+      params: { year, month }
+    });
+    return response.data;
   },
 
   getYearlyStats: async (year: number) => {
-    try {
-      const response = await api.get(`/attendance/stats/yearly?year=${year}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.get('/attendance/stats/yearly', {
+      params: { year }
+    });
+    return response.data;
   },
 
   getLatestScans: async (limit: number = 10) => {
@@ -748,7 +751,19 @@ export const attendanceAPI = {
         message: error.response?.data?.message || 'Erreur lors du scan'
       };
     }
-  }
+  },
+
+
+  // Update this method to match your backend route
+  getScanHistory: async (startDate: string): Promise<LearnerAttendance[]> => {
+    const response = await api.get('/attendance/history', {
+      params: { date: startDate }
+    });
+    return response.data;
+  },
+
+  // Update this method to match your backend controller
+ 
 };
 
 // Promotions API calls

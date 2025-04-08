@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { learnersAPI, referentialsAPI, promotionsAPI, attendanceAPI } from "@/lib/api"
-import { Users, Book, GraduationCap, Briefcase } from "lucide-react"
+import { Users, Book, GraduationCap, Briefcase, Clock, UserMinus } from "lucide-react"
 import {
   BarChart,
   Bar,
@@ -23,14 +23,26 @@ const CURRENT_YEAR = new Date().getFullYear()
 const CURRENT_MONTH = new Date().getMonth() + 1
 const MONTHS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"]
 
+interface DashboardStats {
+  totalLearners: number;
+  totalReferentials: number;
+  waitingListCount: number;
+  abandonedCount: number;
+  currentPromotion: string;
+  currentMonth: string;
+  currentDay: number;
+}
+
 export default function AdminDashboard() {
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<DashboardStats>({
     totalLearners: 0,
     totalReferentials: 0,
-    currentPromotion: "2025",
+    waitingListCount: 0,
+    abandonedCount: 0,
+    currentPromotion: "",
     currentMonth: MONTHS[new Date().getMonth()],
     currentDay: new Date().getDate(),
-  })
+  });
   const [selectedMonth, setSelectedMonth] = useState("This Month")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -49,68 +61,56 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true)
-        setError("")
+        setLoading(true);
+        setError("");
 
-        // Fetch all required data in parallel
-        const [learners, referentials, promotions, attendanceData] = await Promise.all([
-          learnersAPI.getAllLearners().catch((err) => {
-            console.error("Error fetching learners:", err)
-            return []
-          }),
-          referentialsAPI.getAllReferentials().catch((err) => {
-            console.error("Error fetching referentials:", err)
-            return []
-          }),
-          promotionsAPI.getAllPromotions().catch((err) => {
-            console.error("Error fetching promotions:", err)
-            return []
-          }),
-          attendanceAPI.getYearlyStats(CURRENT_YEAR).catch((err) => {
-            console.error("Error fetching yearly stats:", err)
-            return null
-          }),
-        ])
+        // Get active promotion first
+        const promotions = await promotionsAPI.getAllPromotions();
+        const activePromotion = promotions.find(p => p.status === 'ACTIVE');
+
+        if (!activePromotion) {
+          throw new Error('No active promotion found');
+        }
+
+        // Get learners of active promotion
+        const learners = await learnersAPI.getAllLearners();
+        const activePromotionLearners = learners.filter(l => l.promotionId === activePromotion.id);
+        
+        // Calculate different learner counts
+        const activeLearners = activePromotionLearners.filter(l => l.status === 'ACTIVE');
+        const waitingLearners = activePromotionLearners.filter(l => l.status === 'WAITING');
+        const abandonedLearners = activePromotionLearners.filter(l => l.status === 'ABANDONED');
 
         // Update stats
-        if (learners && learners.length > 0) {
-          setStats((prev) => ({
-            ...prev,
-            totalLearners: learners.length,
-          }))
+        setStats(prev => ({
+          ...prev,
+          totalLearners: activeLearners.length,
+          waitingListCount: waitingLearners.length,
+          abandonedCount: abandonedLearners.length,
+          currentPromotion: activePromotion.name,
+          totalReferentials: activePromotion.referentials?.length || 0
+        }));
 
-          // Calculate gender distribution
-          const maleCount = learners.filter((learner) => learner.gender === "MALE").length
-          const femaleCount = learners.filter((learner) => learner.gender === "FEMALE").length
-          const total = learners.length || 1 // Avoid division by zero
+        // Calculate gender distribution for active learners only
+        const maleCount = activeLearners.filter(l => l.gender === 'MALE').length;
+        const femaleCount = activeLearners.filter(l => l.gender === 'FEMALE').length;
+        const total = activeLearners.length || 1;
 
-          const malePercentage = Math.round((maleCount / total) * 100)
-          const femalePercentage = 100 - malePercentage // Ensure they add up to 100%
+        const malePercentage = Math.round((maleCount / total) * 100);
+        const femalePercentage = Math.round((femaleCount / total) * 100);
 
-          setGenderData([
-            { name: "Hommes", value: malePercentage, color: "#0E8D7B" },
-            { name: "Femmes", value: femalePercentage, color: "#F7941D" },
-          ])
-        }
+        setGenderData([
+          { name: "Hommes", value: malePercentage, color: "#0E8D7B" },
+          { name: "Femmes", value: femalePercentage, color: "#F7941D" }
+        ]);
 
-        // Update referentials count
-        if (referentials && referentials.length > 0) {
-          setStats((prev) => ({
-            ...prev,
-            totalReferentials: referentials.length,
-          }))
-        }
-
-        // Get current promotion
-        if (promotions && promotions.length > 0) {
-          const currentPromotion = promotions.find((p) => p.status === "ACTIVE")?.name || "2025"
-          setStats((prev) => ({
-            ...prev,
-            currentPromotion,
-          }))
-        }
-
+        // ... rest of your existing fetchData logic ...
         // Update attendance data
+        const attendanceData = await attendanceAPI.getYearlyStats(CURRENT_YEAR).catch((err) => {
+          console.error("Error fetching yearly stats:", err)
+          return null
+        })
+
         if (attendanceData?.months) {
           const chartData = attendanceData.months.map((monthData, index) => ({
             name: MONTHS[index],
@@ -256,77 +256,37 @@ export default function AdminDashboard() {
     <div className="p-6 bg-gray-50">
       {/* Top Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        {/* Apprenants Card */}
-        <div className="bg-orange-500 rounded-lg shadow-lg overflow-hidden"
-        style={{
-          backgroundImage: "url('https://res.cloudinary.com/drxouwbms/image/upload/v1743765994/patternCard_no3lhf.png')",
-          backgroundSize: "cover",
-          backgroundPosition: "center"
-        }}>
-          <div className="p-6 flex items-center justify-between">
-            <div className="text-white">
-              <div className="text-4xl font-bold">{loading ? "-" : stats.totalLearners}</div>
-              <div className="text-sm mt-1">Apprenants</div>
-            </div>
-            <div className="bg-white rounded-full p-3">
-              <Users className="h-8 w-8 text-orange-500" />
-            </div>
-          </div>
-        </div>
+        {/* Active Learners Card */}
+        <StatsCard
+          title="Apprenants"
+          value={stats.totalLearners}
+          icon={<Users className="h-8 w-8 text-orange-500" />}
+          loading={loading}
+        />
 
-        {/* Référentiels Card */}
-        <div className="bg-orange-500 rounded-lg shadow-lg overflow-hidden"
-        style={{
-          backgroundImage: "url('https://res.cloudinary.com/drxouwbms/image/upload/v1743765994/patternCard_no3lhf.png')",
-          backgroundSize: "cover",
-          backgroundPosition: "center"
-        }}>
-          <div className="p-6 flex items-center justify-between">
-            <div className="text-white">
-              <div className="text-4xl font-bold">{loading ? "-" : stats.totalReferentials}</div>
-              <div className="text-sm mt-1">Référentiels</div>
-            </div>
-            <div className="bg-white rounded-full p-3">
-              <Book className="h-8 w-8 text-orange-500" />
-            </div>
-          </div>
-        </div>
+        {/* Referentials Card */}
+        <StatsCard
+          title="Référentiels"
+          value={stats.totalReferentials}
+          icon={<Book className="h-8 w-8 text-orange-500" />}
+          loading={loading}
+        />
 
-        {/* Stagiaires Card - Fixed Value */}
-        <div className="bg-orange-500 rounded-xl shadow-xl overflow-hidden"
-        style={{
-          backgroundImage: "url('https://res.cloudinary.com/drxouwbms/image/upload/v1743765994/patternCard_no3lhf.png')",
-          backgroundSize: "cover",
-          backgroundPosition: "center"
-        }}>
-          <div className="p-6 flex items-center justify-between">
-            <div className="text-white">
-              <div className="text-4xl font-bold">5</div>
-              <div className="text-sm mt-1">Stagiaires</div>
-            </div>
-            <div className="bg-white rounded-full p-3">
-              <GraduationCap className="h-8 w-8 text-orange-500" />
-            </div>
-          </div>
-        </div>
+        {/* Waiting List Card */}
+        <StatsCard
+          title="Liste d'attente"
+          value={stats.waitingListCount}
+          icon={<Clock className="h-8 w-8 text-orange-500" />}
+          loading={loading}
+        />
 
-        {/* Permanent Card - Fixed Value */}
-        <div className="bg-orange-500 rounded-xl shadow-lg overflow-hidden"
-        style={{
-          backgroundImage: "url('https://res.cloudinary.com/drxouwbms/image/upload/v1743765994/patternCard_no3lhf.png')",
-          backgroundSize: "cover",
-          backgroundPosition: "center"
-        }}>
-          <div className="p-6 flex items-center justify-between">
-            <div className="text-white">
-              <div className="text-4xl font-bold">13</div>
-              <div className="text-sm mt-1">Permanent</div>
-            </div>
-            <div className="bg-white rounded-full p-3">
-              <Briefcase className="h-8 w-8 text-orange-500" />
-            </div>
-          </div>
-        </div>
+        {/* Abandoned Card */}
+        <StatsCard
+          title="Abandons"
+          value={stats.abandonedCount}
+          icon={<UserMinus className="h-8 w-8 text-orange-500" />}
+          loading={loading}
+        />
       </div>
 
       {/* Sonatel Card and Charts */}
@@ -524,4 +484,26 @@ export default function AdminDashboard() {
     </div>
   )
 }
+
+// Add a StatsCard component for consistency
+const StatsCard = ({ title, value, icon, loading }) => (
+  <div 
+    className="bg-orange-500 rounded-lg shadow-lg overflow-hidden"
+    style={{
+      backgroundImage: "url('https://res.cloudinary.com/drxouwbms/image/upload/v1743765994/patternCard_no3lhf.png')",
+      backgroundSize: "cover",
+      backgroundPosition: "center"
+    }}
+  >
+    <div className="p-6 flex items-center justify-between">
+      <div className="text-white">
+        <div className="text-4xl font-bold">{loading ? "-" : value}</div>
+        <div className="text-sm mt-1">{title}</div>
+      </div>
+      <div className="bg-white rounded-full p-3">
+        {icon}
+      </div>
+    </div>
+  </div>
+);
 

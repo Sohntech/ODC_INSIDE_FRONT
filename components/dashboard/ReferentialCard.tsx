@@ -35,7 +35,7 @@ export default function ReferentialCard({ referential }: ReferentialCardProps) {
         
         {/* Modules count */}
         <p className="text-gray-800 mb-1 font-medium text-xs">
-          {referential.modules?.length || 12} modules
+          {referential.modules?.length || 0} modules
         </p>
         
         {/* Description */}

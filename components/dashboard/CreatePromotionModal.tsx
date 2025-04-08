@@ -4,12 +4,120 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { referentialsAPI } from '@/lib/api';
+import { FormError } from "@/components/ui/form-error";
+import { cn } from '@/lib/utils';
 
 interface CreatePromotionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (promotionData: any) => Promise<void>;
 }
+
+interface FieldErrors {
+  name?: string;
+  startDate?: string;
+  endDate?: string;
+  referentials?: string;
+  photo?: string;
+}
+
+const validateForm = (
+  formData: { name: string; startDate: string; endDate: string },
+  selectedReferentials: any[],
+  photoFile: File | null
+): { isValid: boolean; error: string } => {
+  if (!formData.name.trim()) {
+    return { isValid: false, error: 'Le nom de la promotion est requis' };
+  }
+
+  if (!formData.startDate) {
+    return { isValid: false, error: 'La date de début est requise' };
+  }
+
+  if (!formData.endDate) {
+    return { isValid: false, error: 'La date de fin est requise' };
+  }
+
+  const nameRegex = /^[a-zA-Z0-9\s-]{3,50}$/;
+  if (!nameRegex.test(formData.name.trim())) {
+    return { 
+      isValid: false, 
+      error: 'Le nom de la promotion doit contenir entre 3 et 50 caractères et ne peut contenir que des lettres, chiffres, espaces et tirets' 
+    };
+  }
+
+  const startDate = new Date(formData.startDate);
+  const endDate = new Date(formData.endDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (startDate < today) {
+    return { 
+      isValid: false, 
+      error: 'La date de début ne peut pas être dans le passé' 
+    };
+  }
+
+  if (endDate <= startDate) {
+    return { 
+      isValid: false, 
+      error: 'La date de fin doit être postérieure à la date de début' 
+    };
+  }
+
+  const minDuration = new Date(startDate);
+  minDuration.setMonth(minDuration.getMonth() + 1);
+  if (endDate < minDuration) {
+    return { 
+      isValid: false, 
+      error: 'La durée minimale d\'une promotion est d\'un mois' 
+    };
+  }
+
+  const maxDuration = new Date(startDate);
+  maxDuration.setFullYear(maxDuration.getFullYear() + 2);
+  if (endDate > maxDuration) {
+    return { 
+      isValid: false, 
+      error: 'La durée maximale d\'une promotion est de 2 ans' 
+    };
+  }
+
+  if (selectedReferentials.length === 0) {
+    return { 
+      isValid: false, 
+      error: 'Sélectionnez au moins un référentiel' 
+    };
+  }
+
+  if (selectedReferentials.length > 5) {
+    return { 
+      isValid: false, 
+      error: 'Une promotion ne peut pas avoir plus de 5 référentiels' 
+    };
+  }
+
+  if (photoFile) {
+    const maxSize = 2 * 1024 * 1024; 
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+
+    if (!allowedTypes.includes(photoFile.type)) {
+      return { 
+        isValid: false, 
+        error: 'Le format de l\'image doit être JPG ou PNG' 
+      };
+    }
+
+    if (photoFile.size > maxSize) {
+      return { 
+        isValid: false, 
+        error: 'L\'image ne doit pas dépasser 2MB' 
+      };
+    }
+  }
+
+  return { isValid: true, error: '' };
+};
 
 export default function CreatePromotionModal({ isOpen, onClose, onSubmit }: CreatePromotionModalProps) {
   const [formData, setFormData] = useState({
@@ -25,8 +133,8 @@ export default function CreatePromotionModal({ isOpen, onClose, onSubmit }: Crea
   const [error, setError] = useState('');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
-  // Charger les référentiels au montage du composant
   useEffect(() => {
     const fetchReferentials = async () => {
       try {
@@ -46,7 +154,6 @@ export default function CreatePromotionModal({ isOpen, onClose, onSubmit }: Crea
     }
   }, [isOpen]);
 
-  // Filtrer les référentiels selon la recherche
   const filteredReferentials = referentials.filter(ref => 
     ref.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
     !selectedReferentials.find(selected => selected.id === ref.id)
@@ -55,13 +162,11 @@ export default function CreatePromotionModal({ isOpen, onClose, onSubmit }: Crea
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
         setError('Le fichier doit être une image');
         return;
       }
       
-      // Validate file size (2MB max)
       if (file.size > 2 * 1024 * 1024) {
         setError('L\'image ne doit pas dépasser 2MB');
         return;
@@ -70,11 +175,10 @@ export default function CreatePromotionModal({ isOpen, onClose, onSubmit }: Crea
       setPhotoFile(file);
       const previewUrl = URL.createObjectURL(file);
       setPhotoPreview(previewUrl);
-      setError(''); // Clear any existing errors
+      setError('');
     }
   };
 
-  // Clean up the preview URL when the component unmounts or when the modal closes
   useEffect(() => {
     return () => {
       if (photoPreview) {
@@ -85,35 +189,43 @@ export default function CreatePromotionModal({ isOpen, onClose, onSubmit }: Crea
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFieldErrors({});
     
-    if (!formData.name || !formData.startDate || !formData.endDate || selectedReferentials.length === 0) {
-      setError('Veuillez remplir tous les champs et sélectionner au moins un référentiel');
+    const validation = validateForm(formData, selectedReferentials, photoFile);
+    if (!validation.isValid) {
+      if (validation.error.includes('nom')) {
+        setFieldErrors(prev => ({ ...prev, name: validation.error }));
+      }
+      if (validation.error.includes('début')) {
+        setFieldErrors(prev => ({ ...prev, startDate: validation.error }));
+      }
+      if (validation.error.includes('fin')) {
+        setFieldErrors(prev => ({ ...prev, endDate: validation.error }));
+      }
+      if (validation.error.includes('référentiel')) {
+        setFieldErrors(prev => ({ ...prev, referentials: validation.error }));
+      }
+      if (validation.error.includes('image')) {
+        setFieldErrors(prev => ({ ...prev, photo: validation.error }));
+      }
       return;
     }
 
     try {
       setIsLoading(true);
+      setError('');
       
       const formDataToSend = new FormData();
-      formDataToSend.append('name', formData.name);
+      formDataToSend.append('name', formData.name.trim());
       formDataToSend.append('startDate', formData.startDate);
       formDataToSend.append('endDate', formData.endDate);
       
-      // Convert referentialIds to string before appending
       const referentialIds = selectedReferentials.map(ref => ref.id);
       formDataToSend.append('referentialIds', referentialIds.join(','));
       
-      // Add photo if exists
       if (photoFile) {
         formDataToSend.append('photo', photoFile);
       }
-
-      // Debug log
-      const debugData = {};
-      formDataToSend.forEach((value, key) => {
-        debugData[key] = value;
-      });
-      console.log('Sending form data:', debugData);
 
       await onSubmit(formDataToSend);
       onClose();
@@ -148,8 +260,9 @@ export default function CreatePromotionModal({ isOpen, onClose, onSubmit }: Crea
                 value={formData.name}
                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Ex: Promotion 2025"
-                className="mt-1"
+                className={cn("mt-1", fieldErrors.name && "border-red-500 focus-visible:ring-red-500")}
               />
+              <FormError message={fieldErrors.name} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -161,8 +274,9 @@ export default function CreatePromotionModal({ isOpen, onClose, onSubmit }: Crea
                   type="date"
                   value={formData.startDate}
                   onChange={e => setFormData({ ...formData, startDate: e.target.value })}
-                  className="mt-1"
+                  className={cn("mt-1", fieldErrors.startDate && "border-red-500 focus-visible:ring-red-500")}
                 />
+                <FormError message={fieldErrors.startDate} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
@@ -172,8 +286,9 @@ export default function CreatePromotionModal({ isOpen, onClose, onSubmit }: Crea
                   type="date"
                   value={formData.endDate}
                   onChange={e => setFormData({ ...formData, endDate: e.target.value })}
-                  className="mt-1"
+                  className={cn("mt-1", fieldErrors.endDate && "border-red-500 focus-visible:ring-red-500")}
                 />
+                <FormError message={fieldErrors.endDate} />
               </div>
             </div>
 
@@ -224,6 +339,7 @@ export default function CreatePromotionModal({ isOpen, onClose, onSubmit }: Crea
                   Format JPG, PNG. Taille max 2MB
                 </div>
               </div>
+              <FormError message={fieldErrors.photo} />
             </div>
 
             <div>
@@ -243,7 +359,6 @@ export default function CreatePromotionModal({ isOpen, onClose, onSubmit }: Crea
                 />
               </div>
 
-              {/* Selected referentials */}
               {selectedReferentials.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-3">
                   {selectedReferentials.map(ref => (
@@ -266,7 +381,6 @@ export default function CreatePromotionModal({ isOpen, onClose, onSubmit }: Crea
                 </div>
               )}
 
-              {/* Referentials search results */}
               {searchQuery && filteredReferentials.length > 0 && (
                 <div className="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg max-h-60 overflow-auto">
                   <ul className="py-1">
@@ -285,6 +399,7 @@ export default function CreatePromotionModal({ isOpen, onClose, onSubmit }: Crea
                   </ul>
                 </div>
               )}
+              <FormError message={fieldErrors.referentials} />
             </div>
           </div>
 

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { referentialsAPI, promotionsAPI, Referential } from '@/lib/api';
 import { Plus, Search, Book, Users, GraduationCap, Briefcase, Filter } from 'lucide-react';
 import ReferentialCard from '@/components/dashboard/ReferentialCard';
+import AddReferentialToPromotionModal from '@/components/modals/AddReferentialToPromotionModal';
 
 export default function ReferentialsPage() {
   const [referentials, setReferentials] = useState<Referential[]>([]);
@@ -12,57 +13,61 @@ export default function ReferentialsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [activePromotionId, setActivePromotionId] = useState<string>('');
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      // First get the active promotion
+      const promotions = await promotionsAPI.getAllPromotions();
+      const activePromotion = promotions.find(p => p.status === 'ACTIVE');
+      
+      if (!activePromotion) {
+        setError('Aucune promotion active trouvée');
+        return;
+      }
+
+      setActivePromotionId(activePromotion.id);
+
+      // Get detailed data for each referential in the active promotion
+      const referentialPromises = activePromotion.referentials.map(async (ref) => {
+        try {
+          // Fetch complete referential data including learners and modules
+          const detailedRef = await referentialsAPI.getReferentialById(ref.id);
+          return {
+            ...detailedRef,
+            learners: detailedRef.learners?.filter(learner => 
+              learner.promotionId === activePromotion.id
+            ),
+            modules: detailedRef.modules || []
+          };
+        } catch (error) {
+          console.error(`Error fetching details for referential ${ref.id}:`, error);
+          return ref; // Fallback to basic referential data if fetch fails
+        }
+      });
+
+      // Wait for all referential data to be fetched
+      const detailedReferentials = await Promise.all(referentialPromises);
+      
+      if (detailedReferentials.length > 0) {
+        setReferentials(detailedReferentials);
+      } else {
+        setError('Aucun référentiel trouvé pour la promotion active');
+      }
+
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError('Une erreur est survenue lors du chargement des référentiels');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError('');
-        
-        // First get the active promotion
-        const promotions = await promotionsAPI.getAllPromotions();
-        const activePromotion = promotions.find(p => p.status === 'ACTIVE');
-        
-        if (!activePromotion) {
-          setError('Aucune promotion active trouvée');
-          return;
-        }
-
-        // Get detailed data for each referential in the active promotion
-        const referentialPromises = activePromotion.referentials.map(async (ref) => {
-          try {
-            // Fetch complete referential data including learners and modules
-            const detailedRef = await referentialsAPI.getReferentialById(ref.id);
-            return {
-              ...detailedRef,
-              learners: detailedRef.learners?.filter(learner => 
-                learner.promotionId === activePromotion.id
-              ),
-              modules: detailedRef.modules || []
-            };
-          } catch (error) {
-            console.error(`Error fetching details for referential ${ref.id}:`, error);
-            return ref; // Fallback to basic referential data if fetch fails
-          }
-        });
-
-        // Wait for all referential data to be fetched
-        const detailedReferentials = await Promise.all(referentialPromises);
-        
-        if (detailedReferentials.length > 0) {
-          setReferentials(detailedReferentials);
-        } else {
-          setError('Aucun référentiel trouvé pour la promotion active');
-        }
-
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Une erreur est survenue lors du chargement des référentiels');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     fetchData();
   }, []);
 
@@ -87,7 +92,7 @@ export default function ReferentialsPage() {
         </div>
       </div>
 
-      {/* Search and Filter */}
+      {/* Search and Buttons */}
       <div className="mb-8">
         <div className="flex flex-col md:flex-row gap-4">
           {/* Search Bar */}
@@ -106,15 +111,24 @@ export default function ReferentialsPage() {
             </div>
           </div>
 
+          {/* Buttons */}
+          <div className="flex gap-4">
+            <Link 
+              href="/dashboard/referentials/all" 
+              className="inline-flex items-center px-4 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-400 transition-colors shadow-sm whitespace-nowrap"
+            >
+              <Book size={18} className="mr-2" />
+              Tous les référentiels
+            </Link>
 
-          {/* Add Button */}
-          <Link 
-            href="/dashboard/referentials/new" 
-            className="inline-flex items-center px-4 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-500 transition-colors shadow-sm whitespace-nowrap"
-          >
-            <Plus size={18} className="mr-2" />
-            Ajouter un référentiel
-          </Link>
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="inline-flex items-center px-4 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-500 transition-colors shadow-sm whitespace-nowrap"
+            >
+              <Plus size={18} className="mr-2" />
+              Ajouter à la promotion
+            </button>
+          </div>
         </div>
       </div>
       
@@ -160,6 +174,17 @@ export default function ReferentialsPage() {
           ))}
         </div>
       )}
+
+      {/* Add Modal */}
+      <AddReferentialToPromotionModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        promotionId={activePromotionId}
+        onSuccess={() => {
+          // Refresh data after adding referentials
+          fetchData();
+        }}
+      />
     </div>
   );
 }

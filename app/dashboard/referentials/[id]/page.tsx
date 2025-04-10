@@ -54,9 +54,12 @@ export default function ReferentialDetailsPage() {
       `${learner.firstName} ${learner.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
       learner.email.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesStatus = statusFilter.length === 0 || statusFilter.includes(learner.status);
+    const validStatus = learner.status === 'ACTIVE' || learner.status === 'REMPLACEMENT';
     
-    return matchesSearch && matchesStatus;
+    // Check if learner belongs to active promotion
+    const belongsToActivePromotion = learner.promotionId === referential.promotions?.[0]?.id;
+    
+    return matchesSearch && validStatus && belongsToActivePromotion;
   }) || [];
 
   // Calculate pagination
@@ -101,22 +104,21 @@ export default function ReferentialDetailsPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Header */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
-        <div className="flex items-center mb-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+        <div className="flex items-center mb-4">
           <button 
             onClick={() => router.back()}
-            className="mr-4 p-2  hover:bg-gray-100 rounded-lg transition-colors"
+            className="mr-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ArrowLeft size={20} className="text-gray-600" />
           </button>
-            <div className="flex items-center">
+          <div className="flex items-center">
             <h1 className="text-2xl font-bold text-teal-600">Référentiels</h1>
             <span className="mx-2 text-gray-400">/</span>
             <span className="text-orange-500">Détails</span>
-            </div>
+          </div>
         </div>
         <div className="flex items-start justify-between">
-            
           <div className="flex items-start space-x-6">
             {referential.photoUrl ? ( 
               <Image
@@ -140,9 +142,9 @@ export default function ReferentialDetailsPage() {
         </div>
       </div>
 
-      {/* Modules Section */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-6">
+      {/* Modules Section - Updated design */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-800">Modules</h2>
           <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm">
             {referential.modules?.length || 0} modules
@@ -150,50 +152,48 @@ export default function ReferentialDetailsPage() {
         </div>
         
         {!referential.modules?.length ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center">
             <Book className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun module</h3>
             <p className="text-gray-500">Aucun module n'a été ajouté à ce référentiel.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {referential.modules.map((module) => (
               <div 
                 key={module.id}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
+                className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
               >
-                {module.photoUrl ? (
-                  <div className="h-48 relative">
+                <div className="h-32 relative">
+                  {module.photoUrl ? (
                     <Image
                       src={module.photoUrl}
                       alt={module.name}
                       fill
                       className="object-cover"
                     />
-                  </div>
-                ) : (
-                  <div className="h-48 bg-orange-50 flex items-center justify-center">
-                    <Book className="h-12 w-12 text-orange-300" />
-                  </div>
-                )}
-                <div className="p-6">
-                  <h3 className="font-medium text-lg mb-2">{module.name}</h3>
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">{module.description}</p>
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <div className="flex bg-green-100 text-green-700 rounded-lg px-2 py-1 items-center">
-                      <Calendar className="h-4 w-4 mr-1" />
+                  ) : (
+                    <div className="h-full bg-orange-50 flex items-center justify-center">
+                      <Book className="h-8 w-8 text-orange-300" />
+                    </div>
+                  )}
+                </div>
+                <div className="p-4">
+                  <h3 className="font-medium text-base mb-2">{module.name}</h3>
+                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">{module.description}</p>
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <div className="flex bg-green-50 text-green-600 rounded-md px-2 py-1 items-center">
+                      <Calendar className="h-3 w-3 mr-1" />
                       {new Date(module.startDate).toLocaleDateString('fr-FR', {
                         day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
+                        month: 'short'
                       })}
                     </div>
-                    <div className="flex bg-red-100 text-red-700 rounded-lg px-2 py-1 items-center">
-                      <Calendar className="h-4 w-4 mr-1" />
+                    <div className="flex bg-red-50 text-red-600 rounded-md px-2 py-1 items-center">
+                      <Calendar className="h-3 w-3 mr-1" />
                       {new Date(module.endDate).toLocaleDateString('fr-FR', {
                         day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
+                        month: 'short'
                       })}
                     </div>
                   </div>
@@ -204,12 +204,12 @@ export default function ReferentialDetailsPage() {
         )}
       </div>
 
-      {/* Learners Section */}
+      {/* Learners Section - Updated filtering */}
       <div>
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-800">Apprenants</h2>
           <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm">
-            {referential.learners?.length || 0} apprenants
+            {filteredLearners.length} apprenants actifs
           </span>
         </div>
 

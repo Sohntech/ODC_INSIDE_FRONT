@@ -22,6 +22,7 @@ import {
 const CURRENT_YEAR = new Date().getFullYear()
 const CURRENT_MONTH = new Date().getMonth() + 1
 const MONTHS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"]
+const WEEKS = Array.from({length: 52}, (_, i) => `Semaine ${i + 1}`); // Add after existing constants
 
 interface DashboardStats {
   totalLearners: number;
@@ -43,7 +44,7 @@ export default function AdminDashboard() {
     currentMonth: MONTHS[new Date().getMonth()],
     currentDay: new Date().getDate(),
   });
-  const [selectedMonth, setSelectedMonth] = useState("This Month")
+  const [selectedMonth, setSelectedMonth] = useState("Par Mois") // Update the selectedMonth state default value
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
@@ -104,69 +105,42 @@ export default function AdminDashboard() {
           { name: "Femmes", value: femalePercentage, color: "#F7941D" }
         ]);
 
-        // ... rest of your existing fetchData logic ...
-        // Update attendance data
-        const attendanceData = await attendanceAPI.getYearlyStats(CURRENT_YEAR).catch((err) => {
-          console.error("Error fetching yearly stats:", err)
-          return null
-        })
+        // Update attendance data to show monthly by default
+        const yearlyStats = await attendanceAPI.getYearlyStats(CURRENT_YEAR).catch(() => null)
 
-        if (attendanceData?.months) {
-          const chartData = attendanceData.months.map((monthData, index) => ({
+        if (yearlyStats?.months) {
+          const chartData = yearlyStats.months.map((monthData, index) => ({
             name: MONTHS[index],
             Présence: monthData.present || 0,
             Retard: monthData.late || 0,
             Absences: monthData.absent || 0,
           }))
 
-          // Make sure we're setting valid data
           if (chartData.some((data) => data.Présence > 0 || data.Retard > 0 || data.Absences > 0)) {
             setMonthlyAttendanceData(chartData)
           } else {
-            // If no valid data, create sample data that matches the design
-            const sampleAttendanceData = [
+            setMonthlyAttendanceData([
               { name: "Jan", Présence: 50, Retard: 15, Absences: 0 },
-              { name: "Feb", Présence: 60, Retard: 15, Absences: 0 },
+              { name: "Fév", Présence: 60, Retard: 15, Absences: 0 },
               { name: "Mar", Présence: 70, Retard: 15, Absences: 15 },
-              { name: "Apr", Présence: 60, Retard: 15, Absences: 0 },
-              { name: "May", Présence: 45, Retard: 15, Absences: 0 },
+              { name: "Avr", Présence: 60, Retard: 15, Absences: 0 },
+              { name: "Mai", Présence: 45, Retard: 15, Absences: 0 },
               { name: "Jun", Présence: 60, Retard: 15, Absences: 0 },
               { name: "Jul", Présence: 65, Retard: 15, Absences: 0 },
-              { name: "Aug", Présence: 75, Retard: 15, Absences: 0 },
+              { name: "Aoû", Présence: 75, Retard: 15, Absences: 0 },
               { name: "Sep", Présence: 65, Retard: 15, Absences: 0 },
               { name: "Oct", Présence: 60, Retard: 20, Absences: 0 },
               { name: "Nov", Présence: 50, Retard: 15, Absences: 0 },
-              { name: "Dec", Présence: 70, Retard: 15, Absences: 0 },
-            ]
-            setMonthlyAttendanceData(sampleAttendanceData)
+              { name: "Déc", Présence: 70, Retard: 15, Absences: 0 },
+            ])
           }
-        } else {
-          // If no data at all, create sample data
-          const sampleAttendanceData = [
-            { name: "Jan", Présence: 50, Retard: 15, Absences: 0 },
-            { name: "Feb", Présence: 60, Retard: 15, Absences: 0 },
-            { name: "Mar", Présence: 70, Retard: 15, Absences: 15 },
-            { name: "Apr", Présence: 60, Retard: 15, Absences: 0 },
-            { name: "May", Présence: 45, Retard: 15, Absences: 0 },
-            { name: "Jun", Présence: 60, Retard: 15, Absences: 0 },
-            { name: "Jul", Présence: 65, Retard: 15, Absences: 0 },
-            { name: "Aug", Présence: 75, Retard: 15, Absences: 0 },
-            { name: "Sep", Présence: 65, Retard: 15, Absences: 0 },
-            { name: "Oct", Présence: 60, Retard: 20, Absences: 0 },
-            { name: "Nov", Présence: 50, Retard: 15, Absences: 0 },
-            { name: "Dec", Présence: 70, Retard: 15, Absences: 0 },
-          ]
-          setMonthlyAttendanceData(sampleAttendanceData)
         }
 
-        // Force chart re-render
-        setChartKey(Date.now())
         setLoading(false)
       } catch (err) {
         console.error("Error fetching data:", err)
         setError("Failed to load dashboard data")
         setLoading(false)
-        // Still render default data
         setMonthlyAttendanceData([])
       }
     }
@@ -176,81 +150,77 @@ export default function AdminDashboard() {
 
   // Handle month selection change
   const handleMonthChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = event.target.value
-    setSelectedMonth(value)
-    setLoading(true)
-
+    const value = event.target.value;
+    setSelectedMonth(value);
+    setLoading(true);
+  
     try {
-      let chartData = []
-
-      if (value === "This Month") {
-        const monthStats = await attendanceAPI.getMonthlyStats(CURRENT_YEAR, CURRENT_MONTH)
-
-        if (monthStats?.days?.length > 0) {
-          chartData = monthStats.days.map((day) => ({
-            name: `Jour ${day.date}`,
-            Présence: day.present || 0,
-            Retard: day.late || 0,
-            Absences: day.absent || 0,
-          }))
-
-          // Only set data if we have valid values
-          if (!chartData.every((data) => data.Présence === 0 && data.Retard === 0 && data.Absences === 0)) {
-            setMonthlyAttendanceData(chartData)
-          } else {
-            setMonthlyAttendanceData([])
+      let chartData = [];
+      const currentMonth = new Date().getMonth() + 1;
+  
+      switch(value) {
+        case "Par Mois":
+          // Get current month's weekly stats
+          const monthlyStats = await attendanceAPI.getMonthlyStats(CURRENT_YEAR, currentMonth);
+          
+          if (Array.isArray(monthlyStats?.weeks) && monthlyStats.weeks.length > 0) {
+            chartData = Array.isArray(monthlyStats.weeks) ? monthlyStats.weeks.map((week) => ({
+              name: `S${week.weekNumber}`,
+              Présence: week.present || 0,
+              Retard: week.late || 0,
+              Absences: week.absent || 0,
+            })) : [];
           }
-        }
-      } else if (value === "Last Month") {
-        const lastMonth = CURRENT_MONTH === 1 ? 12 : CURRENT_MONTH - 1
-        const year = CURRENT_MONTH === 1 ? CURRENT_YEAR - 1 : CURRENT_YEAR
-        const monthStats = await attendanceAPI.getMonthlyStats(year, lastMonth).catch(() => null)
-
-        if (monthStats?.days && monthStats.days.length > 0) {
-          chartData = monthStats.days.map((day, index) => ({
-            name: `Jour ${index + 1}`,
+          break;
+  
+        case "Par Semaine":
+          // Get current week's daily stats
+          const today = new Date();
+          const startOfWeek = new Date(today);
+          startOfWeek.setDate(today.getDate() - today.getDay()); // Start from Sunday
+  
+          const weeklyPromises = Array.from({ length: 7 }, (_, index) => {
+            const date = new Date(startOfWeek);
+            date.setDate(startOfWeek.getDate() + index);
+            return attendanceAPI.getDailyStats(date.toISOString().split('T')[0]);
+          });
+  
+          const weeklyResults = await Promise.all(weeklyPromises);
+          const daysOfWeek = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+  
+          chartData = weeklyResults.map((day, index) => ({
+            name: daysOfWeek[index],
             Présence: day.present || 0,
             Retard: day.late || 0,
             Absences: day.absent || 0,
-          }))
-        } else {
-          // Generate sample data for demonstration
-          chartData = Array.from({ length: 30 }, (_, i) => ({
-            name: `Jour ${i + 1}`,
-            Présence: Math.floor(Math.random() * 50) + 30,
-            Retard: Math.floor(Math.random() * 20) + 5,
-            Absences: Math.floor(Math.random() * 10) + 5,
-          }))
-        }
-      } else if (value === "This Year") {
-        const yearlyStats = await attendanceAPI.getYearlyStats(CURRENT_YEAR).catch(() => null)
-
-        if (yearlyStats?.months && yearlyStats.months.length > 0) {
-          chartData = yearlyStats.months.map((month, index) => ({
-            name: MONTHS[index],
-            Présence: month.present || 0,
-            Retard: month.late || 0,
-            Absences: month.absent || 0,
-          }))
-        } else {
-          // Generate sample data for demonstration
-          chartData = []
-        }
+          }));
+          break;
+  
+        case "Cette Année":
+          const annualStats = await attendanceAPI.getYearlyStats(CURRENT_YEAR).catch(() => null);
+  
+          if (annualStats?.months && annualStats.months.some(m => m.present || m.late || m.absent)) {
+            chartData = annualStats.months.map((month, index) => ({
+              name: MONTHS[index],
+              Présence: month.present || 0,
+              Retard: month.late || 0,
+              Absences: month.absent || 0,
+            }));
+          }
+          break;
       }
-
-      setMonthlyAttendanceData(chartData)
-
-      // Force chart re-render
-      setChartKey(Date.now())
+  
+      setMonthlyAttendanceData(chartData);
+      setChartKey(Date.now());
     } catch (err) {
-      console.error("Error fetching period data:", err)
-      // In case of error, use default data
-      setMonthlyAttendanceData([])
-      setChartKey(Date.now())
+      console.error("Error fetching period data:", err);
+      setMonthlyAttendanceData([]);
+      setChartKey(Date.now());
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+  
 
   return (
     <div className="p-6 bg-gray-50">
@@ -339,9 +309,9 @@ export default function AdminDashboard() {
               value={selectedMonth}
               onChange={handleMonthChange}
             >
-              <option>This Month</option>
-              <option>Last Month</option>
-              <option>This Year</option>
+              <option value="Par Mois">Par Mois</option>
+              <option value="Par Semaine">Par Semaine</option>
+              <option value="Cette Année">Cette Année</option>
             </select>
           </div>
 

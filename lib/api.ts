@@ -459,11 +459,32 @@ export const referentialsAPI = {
     return response.data;
   },
   
-  createReferential: async (referentialData: Partial<Referential>) => {
+  createReferential: async (referentialData: {
+    name: string;
+    description?: string;
+    photoUrl?: string;
+    capacity: number;
+    numberOfSessions: number;
+    sessionLength?: number;
+  }) => {
     try {
       const response = await api.post('/referentials', referentialData);
       return response.data;
     } catch (error) {
+      console.error('Error creating referential:', error);
+      throw error;
+    }
+  },
+
+  addReferentialsToPromotion: async (promotionId: string, referentialIds: string[]) => {
+    try {
+      // Update the endpoint to match the backend controller
+      const response = await api.post(`/promotions/${promotionId}/referentials`, {
+        referentialIds
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error adding referentials to promotion:', error);
       throw error;
     }
   },

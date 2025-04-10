@@ -12,8 +12,8 @@ export default function LearnersPage() {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [promotionFilter, setPromotionFilter] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string[]>(['ACTIVE', 'REMPLACEMENT']);
+  const [promotionFilter, setPromotionFilter] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -44,6 +44,23 @@ export default function LearnersPage() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const setActivePromotionAsDefault = async () => {
+      try {
+        const activePromotion = promotions.find(p => p.status === 'ACTIVE');
+        if (activePromotion) {
+          setPromotionFilter(activePromotion.id);
+        }
+      } catch (error) {
+        console.error('Error setting active promotion:', error);
+      }
+    };
+
+    if (promotions.length > 0) {
+      setActivePromotionAsDefault();
+    }
+  }, [promotions]);
+
   // Filter learners based on search query, status filter, and promotion filter
   const filteredLearners = learners
     .filter(learner => {
@@ -51,10 +68,10 @@ export default function LearnersPage() {
       return searchQuery === '' || fullName.includes(searchQuery.toLowerCase());
     })
     .filter(learner => {
-      return statusFilter === null || learner.status === statusFilter;
+      return statusFilter.length === 0 || statusFilter.includes(learner.status);
     })
     .filter(learner => {
-      return promotionFilter === null || learner.promotionId === promotionFilter;
+      return !promotionFilter || learner.promotionId === promotionFilter;
     });
 
   // Status options for filter
@@ -202,11 +219,17 @@ export default function LearnersPage() {
           {/* Status filter */}
           <div className="w-full md:w-48">
             <select
-              className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              value={statusFilter || ''}
-              onChange={(e) => setStatusFilter(e.target.value || null)}
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 appearance-none"
+              value={statusFilter}
+              onChange={(e) => {
+                const options = e.target.selectedOptions;
+                const values = Array.from(options).map(option => option.value);
+                setStatusFilter(values);
+              }}
+              multiple={true}
+              size={1} // This fixes the height issue
+              style={{ height: '42px' }} // Match the height of other filters
             >
-              <option value="">Tous les statuts</option>
               {statusOptions.map(option => (
                 <option key={option.value} value={option.value}>
                   {option.label}
@@ -219,15 +242,20 @@ export default function LearnersPage() {
           <div className="w-full md:w-48">
             <select
               className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              value={promotionFilter || ''}
-              onChange={(e) => setPromotionFilter(e.target.value || null)}
+              value={promotionFilter}
+              onChange={(e) => setPromotionFilter(e.target.value)}
             >
               <option value="">Toutes les promotions</option>
-              {promotions.map(promotion => (
-                <option key={promotion.id} value={promotion.id}>
-                  {promotion.name}
-                </option>
-              ))}
+              {promotions
+                .sort((a, b) => (b.status === 'ACTIVE' ? 1 : -1))
+                .map(promotion => (
+                  <option 
+                    key={promotion.id} 
+                    value={promotion.id}
+                  >
+                    {promotion.name} {promotion.status === 'ACTIVE' ? '(Active)' : ''}
+                  </option>
+                ))}
             </select>
           </div>
           

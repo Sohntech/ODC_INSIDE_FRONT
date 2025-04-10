@@ -156,7 +156,12 @@ export default function AttendancePage() {
 
       {/* Stats cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-orange-500 text-white">
+        <Card className="bg-orange-500 text-white"
+        style={{
+          backgroundImage: "url('https://res.cloudinary.com/drxouwbms/image/upload/v1743765994/patternCard_no3lhf.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center"
+        }}>
           <div className="p-6 flex items-center">
             <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mr-4">
               <Users className="h-8 w-8" />
@@ -168,9 +173,14 @@ export default function AttendancePage() {
           </div>
         </Card>
 
-        <Card className="bg-emerald-500 text-white">
+        <Card className="bg-white text-emerald-500"
+        style={{
+          backgroundImage: "url('https://res.cloudinary.com/drxouwbms/image/upload/v1743765994/patternCard_no3lhf.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center"
+        }}>
           <div className="p-6 flex items-center">
-            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mr-4">
+            <div className="w-14 h-14 bg-emerald-500/20 rounded-full flex items-center justify-center mr-4">
               <CheckCircle className="h-8 w-8" />
             </div>
             <div>
@@ -180,9 +190,14 @@ export default function AttendancePage() {
           </div>
         </Card>
 
-        <Card className="bg-amber-500 text-white">
+        <Card className="bg-white text-amber-500"
+        style={{
+          backgroundImage: "url('https://res.cloudinary.com/drxouwbms/image/upload/v1743765994/patternCard_no3lhf.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center"
+        }}>
           <div className="p-6 flex items-center">
-            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mr-4">
+            <div className="w-14 h-14 bg-amber-500/20 rounded-full flex items-center justify-center mr-4">
               <Clock className="h-8 w-8" />
             </div>
             <div>
@@ -192,9 +207,14 @@ export default function AttendancePage() {
           </div>
         </Card>
 
-        <Card className="bg-red-500 text-white">
+        <Card className="bg-white text-red-500"
+        style={{
+          backgroundImage: "url('https://res.cloudinary.com/drxouwbms/image/upload/v1743765994/patternCard_no3lhf.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center"
+        }}>
           <div className="p-6 flex items-center">
-            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mr-4">
+            <div className="w-14 h-14 bg-red-500/20 rounded-full flex items-center justify-center mr-4">
               <AlertTriangle className="h-8 w-8" />
             </div>
             <div>

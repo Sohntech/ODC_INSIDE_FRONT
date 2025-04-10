@@ -28,6 +28,30 @@ const STATUS_OPTIONS = [
   { value: 'absent', label: 'Absent' }
 ] as const;
 
+// Add this helper function at the top of your component
+const formatDateForInput = (date: string, filterType: DateFilterType): string => {
+  const d = new Date(date);
+  
+  switch (filterType) {
+    case 'week': {
+      // Get the first day of the week (Monday)
+      const day = d.getUTCDate() - d.getUTCDay() + (d.getUTCDay() === 0 ? -6 : 1);
+      const week = new Date(d.setUTCDate(day));
+      
+      // Format as YYYY-Www
+      const year = week.getUTCFullYear();
+      const weekNum = Math.ceil((((week.getTime() - new Date(year, 0, 1).getTime()) / 86400000) + 1) / 7);
+      return `${year}-W${weekNum.toString().padStart(2, '0')}`;
+    }
+    case 'month':
+      return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+    case 'year':
+      return `${d.getFullYear()}`;
+    default:
+      return date;
+  }
+};
+
 export default function AttendancePage() {
   // États pour les filtres
   const [dateFilter, setDateFilter] = useState<DateFilterType>('day')
@@ -54,28 +78,71 @@ export default function AttendancePage() {
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [isLoadingRecords, setIsLoadingRecords] = useState(true);
 
+  // Add this function to handle different date input types
+  const getDateInputType = () => {
+    switch (dateFilter) {
+      case 'day':
+        return 'date';
+      case 'week':
+        return 'week';
+      case 'month':
+        return 'month';
+      case 'year':
+        return 'month'; // HTML doesn't have a year input, so we'll use month
+      default:
+        return 'date';
+    }
+  };
+
   // Fonction pour charger les statistiques selon le filtre de date
   const fetchStats = async () => {
     try {
       setIsLoadingStats(true);
+      console.log('Fetching stats for:', { dateFilter, selectedDate });
+      
       let data;
+      
       switch (dateFilter) {
         case 'day':
           data = await attendanceAPI.getDailyStats(selectedDate);
           break;
-        case 'week':
-          // Implémente la logique pour les stats hebdomadaires
+        
+        case 'week': {
+          const weekDate = formatDateForInput(selectedDate, 'week');
+          data = await attendanceAPI.getWeeklyStats(weekDate);
           break;
-        case 'month':
+        }
+        
+        case 'month': {
           const [year, month] = selectedDate.split('-');
           data = await attendanceAPI.getMonthlyStats(parseInt(year), parseInt(month));
           break;
-        case 'year':
-          const yearOnly = selectedDate.split('-')[0];
-          data = await attendanceAPI.getYearlyStats(parseInt(yearOnly));
+        }
+        
+        case 'year': {
+          const year = selectedDate.split('-')[0];
+          data = await attendanceAPI.getYearlyStats(parseInt(year));
           break;
+        }
+        
+        default:
+          data = await attendanceAPI.getDailyStats(selectedDate);
       }
-      setStats(data);
+      
+      // Ensure we have all required stats properties
+      const processedStats = {
+        present: data.present || 0,
+        late: data.late || 0,
+        absent: data.absent || 0,
+        total: data.total || (data.present + data.late + data.absent) || 0,
+        attendance: data.attendance || []
+      };
+      
+      console.log('Received stats:', data);
+      console.log('Processed stats:', processedStats);
+      
+      setStats(processedStats);
+      setAttendanceRecords(processedStats.attendance);
     } catch (err) {
       console.error('Error fetching stats:', err);
       setError('Erreur lors du chargement des statistiques');
@@ -242,9 +309,33 @@ export default function AttendancePage() {
           </Select>
 
           <Input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
+            type={getDateInputType()}
+            value={formatDateForInput(selectedDate, dateFilter)}
+            onChange={(e) => {
+              let newDate = e.target.value;
+              
+              switch (dateFilter) {
+                case 'week': {
+                  // Convert week format (YYYY-Www) to date
+                  const [year, week] = newDate.split('-W');
+                  const firstDayOfWeek = new Date(parseInt(year), 0, 1 + (parseInt(week) - 1) * 7);
+                  newDate = firstDayOfWeek.toISOString().split('T')[0];
+                  break;
+                }
+                case 'month': {
+                  // Add day to month format (YYYY-MM)
+                  newDate = `${newDate}-01`;
+                  break;
+                }
+                case 'year': {
+                  // Add month and day to year format (YYYY)
+                  newDate = `${newDate}-01-01`;
+                  break;
+                }
+              }
+              
+              setSelectedDate(newDate);
+            }}
             className="w-[200px] bg-white"
           />
         </div>
@@ -382,15 +473,15 @@ export default function AttendancePage() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs rounded-full ${
-                        record.learner.referential?.name === "DEV WEB/MOBILE"
+                        record.learner.referential?.name === "Développement web/mobile"
                           ? "bg-green-100 text-green-800"
-                          : record.learner.referential?.name === "REF DIG"
+                          : record.learner.referential?.name === "Référent digital"
                             ? "bg-blue-100 text-blue-800"
-                            : record.learner.referential?.name === "DEV DATA"
+                            : record.learner.referential?.name === "Développement data"
                               ? "bg-purple-100 text-purple-800"
-                              : record.learner.referential?.name === "AWS"
+                              : record.learner.referential?.name === "AWS & DevOps"
                                 ? "bg-yellow-100 text-yellow-800"
-                                : record.learner.referential?.name === "HACKEUSE"
+                                : record.learner.referential?.name === "Assistanat Digital (Hackeuse)"
                                   ? "bg-pink-100 text-pink-800"
                                   : "bg-gray-100 text-gray-800"
                       }`}>
@@ -442,9 +533,10 @@ export default function AttendancePage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Voir détails</DropdownMenuItem>
                           <DropdownMenuItem>Modifier</DropdownMenuItem>
-                          {!record.isPresent && <DropdownMenuItem>Justifier absence</DropdownMenuItem>}
+                          {(record.isLate || !record.isPresent) && (
+                            <DropdownMenuItem>Justifier</DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>

@@ -49,6 +49,7 @@ export interface LearnerDetails {
 }
 
 export interface AttendanceStats {
+  [x: string]: any;
   attendance: any[];
   present: number;
   absent: number;
@@ -462,13 +463,31 @@ export const referentialsAPI = {
   createReferential: async (referentialData: {
     name: string;
     description?: string;
-    photoUrl?: string;
+    photo?: File;
     capacity: number;
     numberOfSessions: number;
     sessionLength?: number;
   }) => {
     try {
-      const response = await api.post('/referentials', referentialData);
+      const formData = new FormData();
+      
+      // Append all form fields
+      Object.keys(referentialData).forEach(key => {
+        if (key === 'photo') {
+          if (referentialData.photo) {
+            formData.append('photoUrl', referentialData.photo); // Changed from 'photo' to 'photoUrl'
+          }
+        } else if (referentialData[key] !== undefined) {
+          formData.append(key, referentialData[key].toString());
+        }
+      });
+
+      const response = await api.post('/referentials', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
       return response.data;
     } catch (error) {
       console.error('Error creating referential:', error);
@@ -645,14 +664,42 @@ export const attendanceAPI = {
     return response.data;
   },
 
-  getMonthlyStats: async (year: number, month: number) => {
+  getWeeklyStats: async (date: string): Promise<AttendanceStats> => {
+    try {
+      const [year, week] = date.split('-W');
+      const response = await api.get('/attendance/stats/weekly', {
+        params: { year: parseInt(year), week: parseInt(week) }
+      });
+
+      // Transform the response to match the expected format
+      const weekStats = response.data.weeks[parseInt(week) - 1] || {
+        present: 0,
+        late: 0,
+        absent: 0
+      };
+
+      return {
+        present: weekStats.present,
+        late: weekStats.late,
+        absent: weekStats.absent,
+        total: weekStats.present + weekStats.late + weekStats.absent,
+        attendance: response.data.attendance || [],
+        totalDays: response.data.attendance?.length || 0
+      };
+    } catch (error) {
+      console.error('Error fetching weekly stats:', error);
+      throw error;
+    }
+  },
+
+  getMonthlyStats: async (year: number, month: number): Promise<AttendanceStats> => {
     const response = await api.get('/attendance/stats/monthly', {
       params: { year, month }
     });
     return response.data;
   },
 
-  getYearlyStats: async (year: number) => {
+  getYearlyStats: async (year: number): Promise<AttendanceStats> => {
     const response = await api.get('/attendance/stats/yearly', {
       params: { year }
     });

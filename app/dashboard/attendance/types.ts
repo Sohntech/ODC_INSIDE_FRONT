@@ -1,3 +1,5 @@
+import { LearnerAttendance } from "@/lib/api";
+
 export type DateFilterType = 'day' | 'week' | 'month' | 'year' | 'total';
 
 export interface AttendanceStats {

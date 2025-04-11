@@ -59,7 +59,7 @@ export interface AttendanceStats {
 
 // Create an Axios instance with base URL and default headers
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://odc-inside-back.onrender.com',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -104,7 +104,7 @@ export const authAPI = {
   login: async (email: string, password: string) => {
     try {
       console.log('API call: Attempting login with:', { email });
-      console.log('API URL being used:', process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000');
+      console.log('API URL being used:', process.env.NEXT_PUBLIC_API_URL || 'https://odc-inside-back.onrender.com');
       
       const response = await axios.post('/api/auth/login', { email, password });
       console.log('API response received:', response.status);

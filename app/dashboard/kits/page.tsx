@@ -9,6 +9,34 @@ import Pagination from '@/components/common/Pagination';
 import React from 'react';
 import { StatCardSkeleton, TableRowSkeleton } from '@/components/skeletons/KitsSkeleton';
 
+const REFERENTIAL_CONFIG = {
+  'Développement web/mobile': {
+    alias: 'Dev Web',
+    bgColor: 'bg-green-100',
+    textColor: 'text-green-800',
+  },
+  'Référent digital': {
+    alias: 'Réf Dig',
+    bgColor: 'bg-blue-100',
+    textColor: 'text-blue-800'
+  },
+  'Développement data': {
+    alias: 'Dev Data',
+    bgColor: 'bg-purple-100',
+    textColor: 'text-purple-800'
+  },
+  'AWS & DevOps': {
+    alias: 'AWS',
+    bgColor: 'bg-yellow-100',
+    textColor: 'text-yellow-800'
+  },
+  'Assistanat Digital (Hackeuse)': {
+    alias: 'Hackeuse',
+    bgColor: 'bg-pink-100',
+    textColor: 'text-pink-800'
+  }
+};
+
 type KitStats = {
   laptop: { received: number; total: number };
   charger: { received: number; total: number };
@@ -279,7 +307,7 @@ export default function KitsPage() {
                 <option value="">Tous les référentiels</option>
                 {getReferentials().map((ref) => (
                   <option key={ref.id} value={ref.id}>
-                    {ref.name}
+                    {ref.name && (REFERENTIAL_CONFIG[ref.name]?.alias || ref.name)}
                   </option>
                 ))}
               </select>
@@ -400,9 +428,16 @@ export default function KitsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {learner.referential?.name}
-                      </div>
+                      {learner.referential?.name ? (
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                          ${REFERENTIAL_CONFIG[learner.referential.name]?.bgColor || 'bg-gray-100'}
+                          ${REFERENTIAL_CONFIG[learner.referential.name]?.textColor || 'text-gray-800'}`}
+                        >
+                          {REFERENTIAL_CONFIG[learner.referential.name]?.alias || learner.referential.name}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 text-sm">Non assigné</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <KitStatusBadge received={learner.kit?.laptop} />

@@ -16,7 +16,8 @@ export async function POST(request: Request) {
     
     // Forward the authentication request to the backend API
     const response = await axios.post(
-      `${process.env.NEXT_PUBLIC_API_URL || 'https://odc-inside-back.onrender.com'}/auth/login`,
+      // `${process.env.NEXT_PUBLIC_API_URL || 'https://odc-inside-back.onrender.com'}/auth/login`,
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/auth/login`,
       { email, password }
     );
     

@@ -59,7 +59,8 @@ export interface AttendanceStats {
 
 // Create an Axios instance with base URL and default headers
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://odc-inside-back.onrender.com',
+  // baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://odc-inside-back.onrender.com',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -104,7 +105,8 @@ export const authAPI = {
   login: async (email: string, password: string) => {
     try {
       console.log('API call: Attempting login with:', { email });
-      console.log('API URL being used:', process.env.NEXT_PUBLIC_API_URL || 'https://odc-inside-back.onrender.com');
+      // console.log('API URL being used:', process.env.NEXT_PUBLIC_API_URL || 'https://odc-inside-back.onrender.com');
+      console.log('API URL being used:', process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000');
       
       const response = await axios.post('/api/auth/login', { email, password });
       console.log('API response received:', response.status);
@@ -179,6 +181,7 @@ export interface Referential {
   status: string;
   learners?: Learner[];
   modules?: Module[];
+  promotions?: Promotion[]; // Ajoutez cette ligne
   coaches?: Array<{
     id: string;
     firstName: string;
@@ -489,8 +492,14 @@ export const referentialsAPI = {
   },
   
   getReferentialById: async (id: string): Promise<Referential> => {
-    const response = await api.get(`/referentials/${id}?include=modules,learners`);
-    return response.data;
+    try {
+      const response = await api.get(`/referentials/${id}?include=modules,learners,promotions`); // Ajout de promotions
+      console.log('API Response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching referential:', error);
+      throw error;
+    }
   },
   
   createReferential: async (referentialData: {
@@ -684,7 +693,7 @@ type ApiScanResponse = {
 export const attendanceAPI = {
   getAttendanceByLearner: async (learnerId: string) => {
     try {
-      const response = await api.get(`/attendance/learner/${learnerId}`);
+      const response = await api.get(`/learners/${learnerId}/attendance`);
       return response.data;
     } catch (error) {
       throw error;

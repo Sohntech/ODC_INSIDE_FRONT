@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { learnersAPI, type Learner, type AttendanceStats, attendanceAPI, LearnerAttendance } from "@/lib/api"
+import { learnersAPI, type Learner, type AttendanceStats } from "@/lib/api"
 import { Calendar, CheckCircle, Clock, Edit, AlertTriangle, ArrowLeft } from "lucide-react"
 
 // Add these helper functions at the top of your component
@@ -41,7 +41,8 @@ const getReferentialAlias = (referentialName: string) => {
 };
 
 export default function LearnerDetailsPage() {
-  const { id } = useParams() || {}
+  const params = useParams();
+  const id = params?.id;
   const learnerId = Array.isArray(id) ? id[0] : id
   const router = useRouter()
 
@@ -49,7 +50,6 @@ export default function LearnerDetailsPage() {
   const [attendanceStats, setAttendanceStats] = useState<AttendanceStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
-  const [attendances, setAttendances] = useState<LearnerAttendance[]>([])
 
   useEffect(() => {
     const fetchLearnerData = async () => {
@@ -57,25 +57,14 @@ export default function LearnerDetailsPage() {
         setLoading(true)
         setError("")
 
-        // Fetch learner and attendance data in parallel
-        const [learnerData, attendanceData] = await Promise.all([
+        // Fetch learner and attendance stats in parallel
+        const [learnerData, attendanceStatsData] = await Promise.all([
           learnersAPI.getLearnerById(learnerId ?? ""),
-          attendanceAPI.getAttendanceByLearner(learnerId ?? ""),
+          learnersAPI.getLearnerAttendanceStats(learnerId ?? ""),
         ])
 
         setLearner(learnerData)
-        setAttendances(attendanceData)
-
-        // Calculate stats from the attendance data
-        const stats = {
-          attendance: attendanceData,
-          present: attendanceData.filter(a => a.isPresent && !a.isLate).length,
-          late: attendanceData.filter(a => a.isPresent && a.isLate).length,
-          absent: attendanceData.filter(a => !a.isPresent).length,
-          totalDays: attendanceData.length
-        }
-        setAttendanceStats(stats)
-
+        setAttendanceStats(attendanceStatsData)
       } catch (err) {
         console.error("Error fetching learner data:", err)
         setError("Une erreur est survenue lors du chargement des données")
@@ -373,4 +362,3 @@ export default function LearnerDetailsPage() {
     </div>
   )
 }
-

@@ -382,9 +382,7 @@ export default function LearnersPage() {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     Référentiel
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    Promotion
-                  </th>
+                
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     Statut
                   </th>
@@ -442,11 +440,7 @@ export default function LearnersPage() {
                           {getReferentialAlias(learner.referential?.name || 'Non assigné')}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {getPromotionYear(promotion?.name)}
-                        </div>
-                      </td>
+                     
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-3 py-1 inline-flex text-xs font-medium rounded-lg ${getStatusBadgeClass(learner.status)}`}>
                           {formatStatusLabel(learner.status)}

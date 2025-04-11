@@ -413,9 +413,7 @@ export default function AttendancePage() {
                   <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase">
                     Nom Complet
                   </th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase">
-                    Adresse
-                  </th>
+                  
                   <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase">
                     Date & Heure
                   </th>
@@ -460,9 +458,7 @@ export default function AttendancePage() {
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                       {record.learner.firstName} {record.learner.lastName}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                      {record.learner.address || "-"}
-                    </td>
+                   
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                       {record.scanTime
                         ? new Date(record.scanTime).toLocaleTimeString("fr-FR", {

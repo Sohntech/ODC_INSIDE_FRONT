@@ -2,33 +2,20 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from "next/navigation"
-import { referentialsAPI } from '@/lib/api'
-import { Book, Users, ArrowLeft, Calendar, Phone, MapPin, Clock, Loader2, AlertCircle, Plus } from 'lucide-react'
+import { Referential, referentialsAPI } from '@/lib/api'
+import { Book, ArrowLeft, Calendar, Plus, AlertCircle } from 'lucide-react' // Removed Users icon
 import Link from 'next/link'
 import Image from 'next/image'
 import { ReferentialDetailsSkeleton } from '@/components/skeletons/ReferentialDetailsSkeleton';
 import AddModuleModal from '@/components/modals/AddModuleModal';
 
 export default function ReferentialDetailsPage() {
-  const { id } = useParams()
-  const [referential, setReferential] = useState(null)
+  const { id } = useParams() || {}
+  const [referential, setReferential] = useState<Referential | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const router = useRouter()
-
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState(['ACTIVE', 'REMPLACEMENT']);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
   const [isAddModuleModalOpen, setIsAddModuleModalOpen] = useState(false);
-
-  const STATUS_OPTIONS = [
-    { value: 'ACTIVE', label: 'Active' },
-    { value: 'WAITING', label: 'En attente' },
-    { value: 'ABANDONED', label: 'Abandon' },
-    { value: 'REMPLACEMENT', label: 'Remplacement' },
-    { value: 'REPLACED', label: 'Remplacé' }
-  ];
 
   const fetchReferential = async () => {
     try {
@@ -50,27 +37,6 @@ export default function ReferentialDetailsPage() {
   useEffect(() => {
     fetchReferential()
   }, [id])
-
-  const filteredLearners = referential?.learners?.filter(learner => {
-    const matchesSearch = 
-      searchQuery === '' || 
-      `${learner.firstName} ${learner.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      learner.email.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const validStatus = learner.status === 'ACTIVE' || learner.status === 'REMPLACEMENT';
-    
-    // Check if learner belongs to active promotion
-    const belongsToActivePromotion = learner.promotionId === referential.promotions?.[0]?.id;
-    
-    return matchesSearch && validStatus && belongsToActivePromotion;
-  }) || [];
-
-  // Calculate pagination
-  const totalPages = Math.ceil(filteredLearners.length / itemsPerPage);
-  const currentLearners = filteredLearners.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
 
   if (loading) {
     return <ReferentialDetailsSkeleton />;
@@ -116,7 +82,7 @@ export default function ReferentialDetailsPage() {
         </div>
         <div className="flex items-start justify-between">
           <div className="flex items-start space-x-6">
-            {referential.photoUrl ? ( 
+            {referential?.photoUrl ? ( 
               <Image
                 src={referential.photoUrl}
                 alt={referential.name}
@@ -131,20 +97,22 @@ export default function ReferentialDetailsPage() {
             )}
             <div>
             
-              <h1 className="text-2xl font-bold text-gray-800 mb-2">{referential.name}</h1>
-              <p className="text-gray-600 max-w-2xl">{referential.description}</p>
+              {referential && (
+                <h1 className="text-2xl font-bold text-gray-800 mb-2">{referential.name}</h1>
+              )}
+              {referential && <p className="text-gray-600 max-w-2xl">{referential.description}</p>}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Modules Section - Updated design */}
+      {/* Modules Section */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-800">Modules</h2>
           <div className="flex items-center gap-4">
             <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm">
-              {referential.modules?.length || 0} modules
+              {referential?.modules?.length || 0} modules
             </span>
             <button
               onClick={() => setIsAddModuleModalOpen(true)}
@@ -156,7 +124,7 @@ export default function ReferentialDetailsPage() {
           </div>
         </div>
         
-        {!referential.modules?.length ? (
+        {!referential?.modules?.length ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center">
             <Book className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun module</h3>
@@ -164,7 +132,7 @@ export default function ReferentialDetailsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {referential.modules.map((module) => (
+            {referential?.modules?.map((module) => (
               <div 
                 key={module.id}
                 className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
@@ -215,104 +183,9 @@ export default function ReferentialDetailsPage() {
         onClose={() => setIsAddModuleModalOpen(false)}
         refId={typeof id === 'string' ? id : ''}
         onSuccess={() => {
-          // Refresh the referential data
           fetchReferential();
         }}
       />
-
-      {/* Learners Section - Updated filtering */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-800">Apprenants</h2>
-          <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm">
-            {filteredLearners.length} apprenants actifs
-          </span>
-        </div>
-
-        {!referential.learners?.length ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
-            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun apprenant</h3>
-            <p className="text-gray-500">Aucun apprenant n'est inscrit dans ce référentiel.</p>
-          </div>
-        ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Apprenant
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Contact
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Adresse
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Statut
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {currentLearners.map((learner) => (
-                    <tr key={learner.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          {learner.photoUrl ? (
-                            <Image
-                              src={learner.photoUrl}
-                              alt={`${learner.firstName} ${learner.lastName}`}
-                              width={40}
-                              height={40}
-                              className="rounded-full"
-                            />
-                          ) : (
-                            <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
-                              <span className="text-orange-600 font-medium">
-                                {learner.firstName[0]}
-                                {learner.lastName[0]}
-                              </span>
-                            </div>
-                          )}
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {learner.firstName} {learner.lastName}
-                            </div>
-                            <div className="text-sm text-gray-500">{learner.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center text-sm text-gray-500">
-                          <Phone className="h-4 w-4 mr-1" />
-                          {learner.phone || 'Non renseigné'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center text-sm text-gray-500">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          {learner.address || 'Non renseignée'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
-                          ${learner.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 
-                          learner.status === 'WAITING' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'}`}>
-                          {learner.status === 'ACTIVE' ? 'Actif' :
-                           learner.status === 'WAITING' ? 'En attente' : 'Abandonné'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   )
 }

@@ -1,4 +1,3 @@
-import { UserButton } from "@clerk/nextjs";
 import { MainNav } from "@/components/main-nav";
 import Image from "next/image";
 
@@ -20,7 +19,6 @@ export const Navbar = async () => {
         </div>
         <MainNav className="mx-6" />
         <div className="ml-auto flex items-center space-x-4">
-          <UserButton afterSignOutUrl="/" />
         </div>
       </div>
     </div>

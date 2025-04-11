@@ -1,11 +1,80 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Filter, Plus } from 'lucide-react';
+import { Search, Filter, Plus, Laptop, Battery, ShoppingBag, Shirt } from 'lucide-react';
 import { learnersAPI, promotionsAPI, Learner, Promotion } from '@/lib/api';
 import KitStatusBadge from '@/components/dashboard/KitStatusBadge';
 import UpdateKitModal from '@/components/modals/UpdateKitModal';
 import Pagination from '@/components/common/Pagination';
+import React from 'react';
+import { StatCardSkeleton, TableRowSkeleton } from '@/components/skeletons/KitsSkeleton';
+
+type KitStats = {
+  laptop: { received: number; total: number };
+  charger: { received: number; total: number };
+  bag: { received: number; total: number };
+  polo: { received: number; total: number };
+};
+
+const calculateKitStats = (learners: Learner[]): KitStats => {
+  const total = learners.length;
+  return {
+    laptop: {
+      received: learners.filter(l => l.kit?.laptop).length,
+      total
+    },
+    charger: {
+      received: learners.filter(l => l.kit?.charger).length,
+      total
+    },
+    bag: {
+      received: learners.filter(l => l.kit?.bag).length,
+      total
+    },
+    polo: {
+      received: learners.filter(l => l.kit?.polo).length,
+      total
+    }
+  };
+};
+
+const StatsCard = ({ 
+  title, 
+  received, 
+  total, 
+  icon 
+}: { 
+  title: string; 
+  received: number; 
+  total: number;
+  icon: React.ReactNode;
+}) => (
+  <div 
+    className="bg-orange-500 rounded-lg shadow-lg overflow-hidden"
+    style={{
+      backgroundImage: "url('https://res.cloudinary.com/drxouwbms/image/upload/v1743765994/patternCard_no3lhf.png')",
+      backgroundSize: "cover",
+      backgroundPosition: "center"
+    }}
+  >
+    <div className="p-6 flex items-center justify-between">
+      <div className="text-white">
+        <div className="text-4xl font-bold">
+          {received}/{total}
+          <span className="text-sm ml-2">
+            ({Math.round((received / total) * 100)}%)
+          </span>
+        </div>
+        <div className="text-sm mt-1">{title}</div>
+      </div>
+      <div className="bg-white rounded-full p-3">
+        {React.cloneElement(icon as React.ReactElement, {
+          className: "w-6 h-6 text-orange-500"
+        })}
+      </div>
+    </div>
+  </div>
+);
 
 export default function KitsPage() {
   const [learners, setLearners] = useState<Learner[]>([]);
@@ -99,58 +168,164 @@ export default function KitsPage() {
     { value: 'REPLACED', label: 'Remplacé' }
   ];
 
+  // First, add this helper function after your status options
+  const getReferentials = () => {
+    const uniqueReferentials = Array.from(
+      new Set(
+        learners
+          .filter(l => l.referential)
+          .map(l => ({
+            id: l.referential?.id,
+            name: l.referential?.name
+          }))
+      )
+    ).filter(ref => ref.id && ref.name);
+
+    return uniqueReferentials;
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Distribution des Kits</h1>
+        <h1 className="text-2xl font-bold text-teal-600">Distribution des Kits</h1>
         <p className="mt-2 text-gray-600">
-          Gestion des kits pour la promotion {activePromotion?.name || 'active'}
+          Gestion des kits pour la {activePromotion?.name || 'promotion active'}
         </p>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Rechercher un apprenant..."
-              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {loading ? (
+          <>
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </>
+        ) : !error && (
+          <>
+            <StatsCard
+              title="Laptops distribués"
+              {...calculateKitStats(filteredLearners).laptop}
+              icon={<Laptop />}
             />
-          </div>
+            <StatsCard
+              title="Chargeurs distribués"
+              {...calculateKitStats(filteredLearners).charger}
+              icon={<Battery />}
+            />
+            <StatsCard
+              title="Sacs distribués"
+              {...calculateKitStats(filteredLearners).bag}
+              icon={<ShoppingBag />}
+            />
+            <StatsCard
+              title=" Pack de Polos distribués"
+              {...calculateKitStats(filteredLearners).polo}
+              icon={<Shirt />}
+            />
+          </>
+        )}
+      </div>
 
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            <select
-              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 appearance-none"
-              value={statusFilter}
-              onChange={(e) => {
-                const options = e.target.selectedOptions;
-                const values = Array.from(options).map(option => option.value);
-                setStatusFilter(values);
-              }}
-              multiple={true}
-              size={1}
-              style={{ height: '42px' }}
-            >
-              {statusOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+      {/* Filters - Only show when data is loaded */}
+      {!loading && !error && (
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Existing search input */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <input
+                type="text"
+                placeholder="Rechercher un apprenant..."
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            {/* Status filter */}
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <select
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 appearance-none"
+                value={statusFilter}
+                onChange={(e) => {
+                  const options = e.target.selectedOptions;
+                  const values = Array.from(options).map(option => option.value);
+                  setStatusFilter(values);
+                }}
+                multiple={true}
+                size={1}
+                style={{ height: '42px' }}
+              >
+                {statusOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* New referential filter */}
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <select
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 appearance-none"
+                value={referentialFilter}
+                onChange={(e) => setReferentialFilter(e.target.value)}
+              >
+                <option value="">Tous les référentiels</option>
+                {getReferentials().map((ref) => (
+                  <option key={ref.id} value={ref.id}>
+                    {ref.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Content */}
       {loading ? (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500" />
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-orange-500">
+                <tr>
+                  {/* Same headers as your actual table */}
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    Apprenant
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    Référentiel
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    Laptop
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    Chargeur
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    Sac
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    Polo
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {[...Array(5)].map((_, index) => (
+                  <TableRowSkeleton key={index} />
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : error ? (
         <div className="text-center py-12">
@@ -255,15 +430,18 @@ export default function KitsPage() {
               </tbody>
             </table>
           </div>
-          <div className='ml-4 '>
+        </div>
+      )}
 
+      {/* Pagination - Only show when data is loaded */}
+      {!loading && !error && filteredLearners.length > 0 && (
+        <div className="ml-4">
           <Pagination
             totalItems={filteredLearners.length}
             initialItemsPerPage={itemsPerPage}
             onPageChange={setCurrentPage}
             onItemsPerPageChange={setItemsPerPage}
           />
-          </div>
         </div>
       )}
 

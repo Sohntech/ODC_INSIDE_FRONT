@@ -16,7 +16,8 @@ import {
   BarChart,
   QrCode,
   Coffee,
-  Clipboard
+  Clipboard,
+  Component
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -38,7 +39,7 @@ export default function DashboardSidebar({ isOpen, setIsOpen, userRole = 'ADMIN'
       { href: '/dashboard/learners', label: 'Apprenants', icon: <Users size={20} /> },
       { href: '/dashboard/attendance', label: 'Gestion des présences', icon: <FileText size={20} /> },
       { href: '/dashboard/kits', label: 'Kits & Laptops', icon: <Laptop size={20} /> },
-      { href: '/dashboard/statistics', label: 'Rapports & Stats', icon: <BarChart size={20} /> },
+      { href: '/dashboard/modules', label: 'Modules', icon: <Component size={20} /> },
     ];
     
     // Role-specific links

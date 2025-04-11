@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from "next/navigation"
 import { referentialsAPI } from '@/lib/api'
-import { Book, Users, ArrowLeft, Calendar, Phone, MapPin, Clock, Loader2, AlertCircle } from 'lucide-react'
+import { Book, Users, ArrowLeft, Calendar, Phone, MapPin, Clock, Loader2, AlertCircle, Plus } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { ReferentialDetailsSkeleton } from '@/components/skeletons/ReferentialDetailsSkeleton';
+import AddModuleModal from '@/components/modals/AddModuleModal';
 
 export default function ReferentialDetailsPage() {
   const { id } = useParams()
@@ -18,6 +20,7 @@ export default function ReferentialDetailsPage() {
   const [statusFilter, setStatusFilter] = useState(['ACTIVE', 'REMPLACEMENT']);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [isAddModuleModalOpen, setIsAddModuleModalOpen] = useState(false);
 
   const STATUS_OPTIONS = [
     { value: 'ACTIVE', label: 'Active' },
@@ -27,24 +30,24 @@ export default function ReferentialDetailsPage() {
     { value: 'REPLACED', label: 'Remplacé' }
   ];
 
-  useEffect(() => {
-    const fetchReferential = async () => {
-      try {
-        setLoading(true)
-        if (typeof id === 'string') {
-          const data = await referentialsAPI.getReferentialById(id)
-          setReferential(data)
-        } else {
-          throw new Error('Invalid id format')
-        }
-      } catch (err) {
-        console.error('Error fetching referential:', err)
-        setError('Une erreur est survenue lors du chargement du référentiel')
-      } finally {
-        setLoading(false)
+  const fetchReferential = async () => {
+    try {
+      setLoading(true)
+      if (typeof id === 'string') {
+        const data = await referentialsAPI.getReferentialById(id)
+        setReferential(data)
+      } else {
+        throw new Error('Invalid id format')
       }
+    } catch (err) {
+      console.error('Error fetching referential:', err)
+      setError('Une erreur est survenue lors du chargement du référentiel')
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchReferential()
   }, [id])
 
@@ -70,14 +73,7 @@ export default function ReferentialDetailsPage() {
   );
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-orange-500 mx-auto mb-4" />
-          <p className="text-gray-500">Chargement des données...</p>
-        </div>
-      </div>
-    )
+    return <ReferentialDetailsSkeleton />;
   }
 
   if (error) {
@@ -146,9 +142,18 @@ export default function ReferentialDetailsPage() {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-800">Modules</h2>
-          <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm">
-            {referential.modules?.length || 0} modules
-          </span>
+          <div className="flex items-center gap-4">
+            <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm">
+              {referential.modules?.length || 0} modules
+            </span>
+            <button
+              onClick={() => setIsAddModuleModalOpen(true)}
+              className="flex items-center px-3 py-2 text-sm font-medium text-white bg-orange-500 rounded-lg hover:bg-orange-600"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Ajouter un module
+            </button>
+          </div>
         </div>
         
         {!referential.modules?.length ? (
@@ -203,6 +208,17 @@ export default function ReferentialDetailsPage() {
           </div>
         )}
       </div>
+
+      {/* Add Module Modal */}
+      <AddModuleModal
+        isOpen={isAddModuleModalOpen}
+        onClose={() => setIsAddModuleModalOpen(false)}
+        refId={typeof id === 'string' ? id : ''}
+        onSuccess={() => {
+          // Refresh the referential data
+          fetchReferential();
+        }}
+      />
 
       {/* Learners Section - Updated filtering */}
       <div>

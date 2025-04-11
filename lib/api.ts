@@ -179,6 +179,12 @@ export interface Referential {
   status: string;
   learners?: Learner[];
   modules?: Module[];
+  coaches?: Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+    photoUrl?: string;
+  }>;
 }
 
 export interface Module {
@@ -188,9 +194,18 @@ export interface Module {
   photoUrl?: string;
   startDate: string;
   endDate: string;
-  coachId: string;
   refId: string;
-  referential?: Referential;
+  coachId: string; // Ajout de coachId
+  coach?: {     // Ajout de l'information du coach
+    id: string;
+    firstName: string;
+    lastName: string;
+    photoUrl?: string;
+  };
+  referential?: {
+    id: string;
+    name: string;
+  };
 }
 
 export interface LearnerAttendance {
@@ -227,15 +242,25 @@ export interface Kit {
   learnerId?: string;
 }
 
+// First, update the Grade interface
 export interface Grade {
   id: string;
-  score: number;
+  value: number; // Changed from score to value to match backend
   comment?: string;
-  date: string;
+  createdAt: string;
   moduleId: string;
   learnerId: string;
-  module?: Module;
-  learner?: Learner;
+  learner: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    matricule: string;
+    photoUrl?: string;  // Ajout de photoUrl
+    referential: {
+      id: string;
+      name: string;
+    } | null;
+  };
 }
 
 interface LatestScansResponse {
@@ -279,11 +304,12 @@ export const learnersAPI = {
     }
   },
   
-  getLearnerById: async (id: string) => {
+  getLearnerById: async (id: string): Promise<Learner> => {
     try {
       const response = await api.get(`/learners/${id}`);
       return response.data;
     } catch (error) {
+      console.error('Error fetching learner:', error);
       throw error;
     }
   },
@@ -400,7 +426,7 @@ export const modulesAPI = {
   
   getModuleById: async (id: string) => {
     try {
-      const response = await api.get(`/modules/${id}`);
+      const response = await api.get(`/modules/${id}?include=coach,referential`);
       return response.data;
     } catch (error) {
       throw error;
@@ -416,14 +442,7 @@ export const modulesAPI = {
     }
   },
   
-  createModule: async (moduleData: Partial<Module>) => {
-    try {
-      const response = await api.post('/modules', moduleData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
+  
   
   updateModule: async (id: string, moduleData: Partial<Module>) => {
     try {
@@ -439,6 +458,20 @@ export const modulesAPI = {
       const response = await api.delete(`/modules/${id}`);
       return response.data;
     } catch (error) {
+      throw error;
+    }
+  },
+
+  createModule: async (formData: FormData) => {
+    try {
+      const response = await api.post('/modules', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error creating module:', error);
       throw error;
     }
   },
@@ -538,11 +571,12 @@ export const gradesAPI = {
     }
   },
   
-  getGradesByModule: async (moduleId: string) => {
+  getGradesByModule: async (moduleId: string): Promise<Grade[]> => {
     try {
-      const response = await api.get(`/grades/module/${moduleId}`);
+      const response = await api.get(`/modules/${moduleId}/grades`);
       return response.data;
     } catch (error) {
+      console.error('Error fetching grades for module:', error);
       throw error;
     }
   },

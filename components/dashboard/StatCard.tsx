@@ -19,7 +19,13 @@ export default function StatCard({ title, value, icon, change, suffix, loading =
   const isNegative = change && change.startsWith('-');
   
   return (
-    <div className="bg-white rounded-lg shadow-sm p-5">
+    <div className="bg-white rounded-lg shadow-sm p-5"
+    style={{
+      backgroundImage: "url('https://res.cloudinary.com/drxouwbms/image/upload/v1743765994/patternCard_no3lhf.png')",
+      backgroundSize: "cover",
+      backgroundPosition: "center"
+    }}
+    >
       
       {loading ? (
         <div className="animate-pulse">
@@ -29,7 +35,8 @@ export default function StatCard({ title, value, icon, change, suffix, loading =
         </div>
       ) : (
         <>
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-3"
+          >
             <h3 className="text-sm font-medium text-gray-500">{title}</h3>
             {icon && <div>{icon}</div>}
           </div>

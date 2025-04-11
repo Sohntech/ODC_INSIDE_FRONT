@@ -506,7 +506,11 @@ export default function AttendancePage() {
                       )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      {record.status === "PENDING" ? (
+                      {record.isPresent && !record.isLate ? (
+                        <span className="px-2 py-1 text-xs">
+                          -
+                        </span>
+                      ) : record.status === "PENDING" ? (
                         <span className="px-2 py-1 text-xs rounded-full bg-amber-500 text-white">
                           En attente
                         </span>
@@ -519,7 +523,7 @@ export default function AttendancePage() {
                           Non justifié
                         </span>
                       ) : (
-                        <span className="px-2 py-1 text-xs rounded-full bg-gray-500 text-white">
+                        <span className="px-2 py-1 text-xs">
                           -
                         </span>
                       )}

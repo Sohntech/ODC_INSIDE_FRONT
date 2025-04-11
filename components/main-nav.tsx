@@ -43,9 +43,9 @@ export function MainNav({
       active: pathname === `/kits`,
     },
     {
-      href: `/rapports`,
-      label: "Rapports & Stats",
-      active: pathname === `/rapports`,
+      href: `/modules`,
+      label: "Modules",
+      active: pathname === `/modules`,
     },
   ];
 

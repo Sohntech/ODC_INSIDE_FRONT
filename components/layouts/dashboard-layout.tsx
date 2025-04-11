@@ -63,8 +63,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       icon: <Laptop className="w-5 h-5" />,
     },
     {
-      label: 'Rapports & Stats',
-      href: '/rapports',
+      label: 'Modules',
+      href: '/modules',
       icon: <BarChart3 className="w-5 h-5" />,
     },
   ];

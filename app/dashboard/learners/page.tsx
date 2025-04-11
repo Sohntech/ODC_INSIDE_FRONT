@@ -165,6 +165,14 @@ export default function LearnersPage() {
     }
   };
 
+  // Ajoutez cette fonction helper avec les autres fonctions helpers
+  const getPromotionYear = (promotionName: string | undefined) => {
+    if (!promotionName) return 'N/A';
+    // Utilise une regex pour trouver un nombre à 4 chiffres (année)
+    const match = promotionName.match(/\d{4}/);
+    return match ? match[0] : 'N/A';
+  };
+
   // Calculate pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -436,7 +444,7 @@ export default function LearnersPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {promotion?.name || 'Non assigné'}
+                          {getPromotionYear(promotion?.name)}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

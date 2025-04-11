@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog } from '@headlessui/react';
 import { X, Loader2 } from 'lucide-react';
 import { learnersAPI } from '@/lib/api';
@@ -26,6 +26,30 @@ export default function UpdateKitModal({
     bag: false,
     polo: false
   });
+
+  // Fetch current kit status when modal opens
+  useEffect(() => {
+    const fetchLearnerKit = async () => {
+      if (learnerId && isOpen) {
+        try {
+          const learner = await learnersAPI.getLearnerById(learnerId);
+          if (learner.kit) {
+            setKitData({
+              laptop: learner.kit.laptop || false,
+              charger: learner.kit.charger || false,
+              bag: learner.kit.bag || false,
+              polo: learner.kit.polo || false
+            });
+          }
+        } catch (err) {
+          console.error('Error fetching learner kit:', err);
+          setError('Erreur lors du chargement des données du kit');
+        }
+      }
+    };
+
+    fetchLearnerKit();
+  }, [learnerId, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -78,7 +78,7 @@ export default function AdminDashboard() {
         const activePromotionLearners = learners.filter(l => l.promotionId === activePromotion.id);
         
         // Calculate different learner counts
-        const activeLearners = activePromotionLearners.filter(l => l.status === 'ACTIVE');
+        const activeLearners = activePromotionLearners.filter(l => l.status === 'ACTIVE' || l.status === 'REPLACEMENT');
         const waitingLearners = activePromotionLearners.filter(l => l.status === 'WAITING');
         const abandonedLearners = activePromotionLearners.filter(l => l.status === 'ABANDONED');
 

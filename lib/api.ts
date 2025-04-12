@@ -144,7 +144,7 @@ export interface User {
   role: 'ADMIN' | 'COACH' | 'APPRENANT' | 'RESTAURATEUR' | 'VIGIL';
 }
 
-export type LearnerStatus = 'ACTIVE' | 'WAITING' | 'ABANDONED' | 'REMPLACEMENT' | 'REPLACED';
+export type LearnerStatus = 'ACTIVE' | 'WAITING' | 'ABANDONED' | 'REPLACEMENT' | 'REPLACED';
 
 export interface Learner {
   [x: string]: any;

@@ -113,7 +113,7 @@ export default function KitsPage() {
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [referentialFilter, setReferentialFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string[]>(['ACTIVE', 'REMPLACEMENT']);
+  const [statusFilter, setStatusFilter] = useState<string[]>(['ACTIVE', 'REPLACEMENT']);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedLearnerId, setSelectedLearnerId] = useState<string | null>(null);
@@ -191,7 +191,7 @@ export default function KitsPage() {
   // Status options for filter
   const statusOptions = [
     { value: 'ACTIVE', label: 'Actif' },
-    { value: 'REMPLACEMENT', label: 'Remplacement' },
+    { value: 'REPLACEMENT', label: 'Remplacement' },
     { value: 'ABANDONED', label: 'Abandon' },
     { value: 'REPLACED', label: 'Remplacé' }
   ];

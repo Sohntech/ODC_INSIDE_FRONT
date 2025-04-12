@@ -57,6 +57,19 @@ export interface AttendanceStats {
   totalDays: number;
 }
 
+// Add these interfaces at the top with other interfaces
+// In your frontend api.ts
+export interface ReplaceLearnerDto {
+  activeLearnerForReplacement: string;
+  replacementLearnerId: string;  // Match the backend DTO
+  reason: string;
+}
+
+export interface ReplacementResponse {
+  replacedLearner: Learner;
+  replacementLearner: Learner;
+}
+
 // Create an Axios instance with base URL and default headers
 const api = axios.create({
   // baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://odc-inside-back.onrender.com',
@@ -353,26 +366,23 @@ export const learnersAPI = {
     }
   },
   
-  getWaitingList: async (promotionId?: string) => {
+  getWaitingList: async (promotionId?: string): Promise<Learner[]> => {
     try {
-      const url = promotionId 
-        ? `/learners/waiting-list?promotionId=${promotionId}`
-        : '/learners/waiting-list';
+      const url = `/learners/waiting-list${promotionId ? `?promotionId=${promotionId}` : ''}`;
       const response = await api.get(url);
       return response.data;
     } catch (error) {
+      console.error('Error fetching waiting list:', error);
       throw error;
     }
   },
   
-  replaceLearner: async (replacedId: string, replacementId: string) => {
+  replaceLearner: async (data: ReplaceLearnerDto): Promise<ReplacementResponse> => {
     try {
-      const response = await api.post('/learners/replace', {
-        replacedId,
-        replacementId,
-      });
+      const response = await api.post('/learners/replace', data);
       return response.data;
     } catch (error) {
+      console.error('Error replacing learner:', error);
       throw error;
     }
   },

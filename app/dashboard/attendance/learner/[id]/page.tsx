@@ -142,7 +142,7 @@ export default function LearnerDetailsPage() {
             <ArrowLeft size={20} className="text-gray-600" />
           </button>
             <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-teal-600">Apprenants</h1>
+            <h1 className="text-2xl font-bold text-teal-600">Apprenan</h1>
             <span className="mx-2 text-gray-400">/</span>
             <span className="text-orange-500">Détails</span>
             </div>

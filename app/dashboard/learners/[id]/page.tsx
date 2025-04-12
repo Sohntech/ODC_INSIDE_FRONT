@@ -217,6 +217,27 @@ export default function LearnerDetailsPage() {
                         {getReferentialAlias(learner.referential?.name || "")}
                       </span>
                     </div>
+                    {learner.status === 'ACTIVE' && (
+                      <button
+                        onClick={() => router.push(`/dashboard/learners/${learner.id}/replace`)}
+                        className="ml-4 inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors"
+                      >
+                        <svg
+                          className="w-4 h-4 mr-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                          />
+                        </svg>
+                        Remplacer l'apprenant
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -352,6 +373,132 @@ export default function LearnerDetailsPage() {
                       <label className="block text-sm text-gray-500 mb-1">Téléphone</label>
                       <div className="p-3 bg-gray-50 rounded-md text-gray-700">
                         {learner.tutor?.phone || "Non renseigné"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Kit Status */}
+            <div className="bg-white rounded-lg shadow-sm mb-6">
+              <div className="p-6 flex items-center justify-between border-b border-gray-100">
+                <h2 className="text-xl font-bold text-gray-800">Kit de l'apprenant</h2>
+                <button className="text-gray-400 hover:text-gray-600">
+                  <Edit size={18} />
+                </button>
+              </div>
+
+              <div className="p-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {/* Laptop */}
+                  <div className={`p-4 rounded-lg border-2 ${
+                    learner.kit?.laptop 
+                    ? 'border-green-500 bg-green-50' 
+                    : 'border-red-500 bg-red-50'
+                  }`}>
+                    <div className="flex items-center space-x-3">
+                      <svg 
+                        className={`w-8 h-8 ${
+                          learner.kit?.laptop ? 'text-green-500' : 'text-red-500'
+                        }`} 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      <div>
+                        <p className="font-medium text-gray-700">Laptop</p>
+                        <p className={`text-sm ${
+                          learner.kit?.laptop ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {learner.kit?.laptop ? 'Reçu' : 'Non reçu'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Charger */}
+                  <div className={`p-4 rounded-lg border-2 ${
+                    learner.kit?.charger 
+                    ? 'border-green-500 bg-green-50' 
+                    : 'border-red-500 bg-red-50'
+                  }`}>
+                    <div className="flex items-center space-x-3">
+                      <svg 
+                        className={`w-8 h-8 ${
+                          learner.kit?.charger ? 'text-green-500' : 'text-red-500'
+                        }`} 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      <div>
+                        <p className="font-medium text-gray-700">Chargeur</p>
+                        <p className={`text-sm ${
+                          learner.kit?.charger ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {learner.kit?.charger ? 'Reçu' : 'Non reçu'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bag */}
+                  <div className={`p-4 rounded-lg border-2 ${
+                    learner.kit?.bag 
+                    ? 'border-green-500 bg-green-50' 
+                    : 'border-red-500 bg-red-50'
+                  }`}>
+                    <div className="flex items-center space-x-3">
+                      <svg 
+                        className={`w-8 h-8 ${
+                          learner.kit?.bag ? 'text-green-500' : 'text-red-500'
+                        }`} 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                      </svg>
+                      <div>
+                        <p className="font-medium text-gray-700">Sac</p>
+                        <p className={`text-sm ${
+                          learner.kit?.bag ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {learner.kit?.bag ? 'Reçu' : 'Non reçu'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Polo */}
+                  <div className={`p-4 rounded-lg border-2 ${
+                    learner.kit?.polo 
+                    ? 'border-green-500 bg-green-50' 
+                    : 'border-red-500 bg-red-50'
+                  }`}>
+                    <div className="flex items-center space-x-3">
+                      <svg 
+                        className={`w-8 h-8 ${
+                          learner.kit?.polo ? 'text-green-500' : 'text-red-500'
+                        }`} 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z M3 6h18 M16 10a4 4 0 01-8 0" />
+                      </svg>
+                      <div>
+                        <p className="font-medium text-gray-700">Polo</p>
+                        <p className={`text-sm ${
+                          learner.kit?.polo ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {learner.kit?.polo ? 'Reçu' : 'Non reçu'}
+                        </p>
                       </div>
                     </div>
                   </div>

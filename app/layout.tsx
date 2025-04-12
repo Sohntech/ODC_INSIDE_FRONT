@@ -5,8 +5,14 @@ import { ThemeProvider } from '@/components/providers/theme-provider'
 import { Toaster } from '@/components/ui/toaster'
 import { QueryProvider } from '@/components/providers/query-provider'
 import { AuthProvider } from '@/components/providers/auth-provider'
+import { NotificationProvider } from '@/components/providers/notification-provider'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ 
+  subsets: ['latin'],
+  display: 'swap',
+  preload: true,
+  variable: '--font-inter'
+})
 
 export const metadata: Metadata = {
   title: 'Sonatel Academy',
@@ -20,7 +26,7 @@ export default function RootLayout({
 }) {
   return (
     <AuthProvider>
-      <html lang="en" suppressHydrationWarning>
+      <html lang="fr" className={inter.variable} suppressHydrationWarning>
         <head>
           <script src="https://cdn.tailwindcss.com"></script>
           <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
@@ -44,8 +50,10 @@ export default function RootLayout({
             storageKey="sonatel-theme"
           >
             <QueryProvider>
-              {children}
-              <Toaster />
+              <NotificationProvider>
+                {children}
+                <Toaster />
+              </NotificationProvider>
             </QueryProvider>
           </ThemeProvider>
         </body>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Bell, MenuIcon, Search, User, LogOut, Settings, ChevronDown, X, Mail, Calendar, Trophy, ChevronRight, FileText } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -10,15 +10,17 @@ import Modal from '@/components/shared/Modal';
 import { AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useNotifications } from '@/hooks/useNotifications';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 interface HeaderProps {
   toggleSidebar: () => void;
   user?: { email: string; role: string } | null;
 }
 
-interface Notification {
+interface LocalNotification {
   id: number;
-  type: 'message' | 'alert' | 'event' | 'award' | 'JUSTIFICATION_REQUEST';
+  type: 'message' | 'alert' | 'event' | 'award' | 'JUSTIFICATION_REQUEST' | 'JUSTIFICATION_SUBMITTED';
   message: string;
   date: string;
   read: boolean;
@@ -32,23 +34,20 @@ interface Notification {
 }
 
 export default function Header({ toggleSidebar, user: propUser }: HeaderProps) {
+  const router = useRouter();
   const [user, setUser] = useState<{ email: string; role: string } | null>(propUser || null);
   const { photoUrl, loading } = useUserPhoto(user?.email);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([
-    { id: 1, type: 'message', message: "Nouveau message de l'administrateur", date: "Il y a 10 minutes", read: false },
-    { id: 2, type: 'alert', message: "Cours de formation mis à jour", date: "Il y a 2 heures", read: false },
-    { id: 3, type: 'event', message: "Rappel: évaluation demain", date: "Il y a 1 jour", read: true },
-    { id: 4, type: 'award', message: "Félicitations ! Vous avez obtenu le badge 'Expert'", date: "Il y a 3 jours", read: true },
-  ]);
-  
   const notificationsRef = useRef<HTMLDivElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  
+  const { notifications, markAsRead: markNotificationAsRead, handleNotificationClick } = useNotifications();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
   useEffect(() => {
     if (propUser) {
       setUser(propUser);
@@ -96,10 +95,17 @@ export default function Header({ toggleSidebar, user: propUser }: HeaderProps) {
     return roleMap[role] || role.toLowerCase();
   };
 
-  const unreadNotificationsCount = notifications.filter(n => !n.read).length;
+  const unreadNotificationsCount = useMemo(() => 
+    notifications.filter(n => !n.read).length,
+    [notifications]
+  );
 
   const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, read: true })));
+    notifications.forEach(notification => {
+      if (!notification.read) {
+        markNotificationAsRead(notification.id.toString());
+      }
+    });
   };
 
   const markAsRead = (id: number) => {
@@ -107,6 +113,8 @@ export default function Header({ toggleSidebar, user: propUser }: HeaderProps) {
       n.id === id ? { ...n, read: true } : n
     ));
   };
+
+  // Use markNotificationAsRead from useNotifications where necessary
 
   const removeNotification = (id: number) => {
     setNotifications(notifications.filter(n => n.id !== id));
@@ -164,13 +172,111 @@ export default function Header({ toggleSidebar, user: propUser }: HeaderProps) {
     }
   };
 
+  const handleJustificationClick = useCallback((attendance) => {
+    if (!attendance) return;
+    
+    // Update URL with attendance ID as query parameter
+    router.push(`/dashboard/attendance?justify=${attendance.id}`);
+    
+    // Close notifications dropdown if open
+    setShowNotifications(false);
+  }, [router]);
+
   // Filtrer les notifications pour les demandes de justification
   const justificationRequests = notifications.filter(
     n => n.type === 'JUSTIFICATION_REQUEST' && !n.read
   );
 
-  const handleJustificationClick = (attendance: any) => {
-    // Handle the click event for justification requests
+  // Filter justification notifications
+  const justificationNotifications = notifications.filter(
+    n => n.type === 'JUSTIFICATION_SUBMITTED' && !n.read
+  );
+
+  // Mettre à jour le rendu des notifications
+  const renderNotification = (notification) => {
+    switch (notification.type) {
+      case 'JUSTIFICATION_SUBMITTED':
+        return (
+          <motion.div 
+            key={notification.id}
+            className="border-l-4 border-l-orange-500 hover:bg-orange-50"
+            onClick={() => handleJustificationClick(notification.attendance)}
+          >
+            <div className="p-4">
+              <div className="flex items-start space-x-3">
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <FileText className="h-4 w-4 text-orange-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{notification.message}</p>
+                  <p className="text-xs text-gray-500">
+                    {format(new Date(notification.createdAt), 'PPp', { locale: fr })}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        );
+      // ... autres types de notifications
+    }
+  };
+
+  const renderNotifications = () => {
+    if (!notifications.length) {
+      return (
+        <div className="p-8 text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Bell size={24} className="text-gray-400" />
+          </div>
+          <p className="text-gray-500 text-sm">Aucune notification</p>
+        </div>
+      );
+    }
+
+    return notifications.map((notification) => (
+      <motion.div 
+        key={notification.id}
+        className="border-l-4 border-l-orange-500 hover:bg-orange-50 cursor-pointer"
+        onClick={async () => {
+          try {
+            // Mark as read
+            await markNotificationAsRead(notification.id);
+            
+            // Update URL without navigation
+            const url = new URL(window.location.href);
+            url.searchParams.set('justify', notification.attendanceId);
+            window.history.pushState({}, '', url);
+
+            // Close notifications dropdown
+            setShowNotifications(false);
+
+            // Dispatch a custom event to notify the page
+            window.dispatchEvent(new CustomEvent('justificationRequest', {
+              detail: { attendanceId: notification.attendanceId }
+            }));
+          } catch (error) {
+            console.error('Error handling notification:', error);
+            toast.error('Une erreur est survenue');
+          }
+        }}
+      >
+        <div className="p-4">
+          <div className="flex items-start space-x-3">
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <FileText className="h-4 w-4 text-orange-500" />
+            </div>
+            <div>
+              <p className="text-sm font-medium">
+                {notification.message}
+              </p>
+              <p className="text-xs text-gray-500">
+                {format(new Date(notification.createdAt), 'PPp', { locale: fr })}
+              </p>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    ));
   };
 
   return (
@@ -270,78 +376,7 @@ export default function Header({ toggleSidebar, user: propUser }: HeaderProps) {
                     </div>
                     
                     <div className="max-h-96 overflow-y-auto">
-                      {notifications.length === 0 ? (
-                        <div className="p-8 text-center">
-                          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Bell size={24} className="text-gray-400" />
-                          </div>
-                          <p className="text-gray-500 text-sm">Aucune notification</p>
-                        </div>
-                      ) : (
-                        <div>
-                          {notifications.map((notification, index) => (
-                            <motion.div 
-                              key={notification.id}
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: index * 0.05 }}
-                              className={`border-l-4 ${getNotificationColor(notification.type)} hover:bg-gray-50 transition-colors duration-200 ${!notification.read ? 'bg-orange-50' : ''}`}
-                              onClick={() => markAsRead(notification.id)}
-                            >
-                              <div className="p-4 flex items-start justify-between">
-                                <div className="flex items-start">
-                                  <div className="mr-3 p-2 bg-white rounded-lg shadow-sm">
-                                    {getNotificationIcon(notification.type)}
-                                  </div>
-                                  <div className="flex-1">
-                                    <p className={`text-sm ${!notification.read ? 'font-medium' : ''} text-gray-800`}>
-                                      {notification.message}
-                                    </p>
-                                    <p className="text-xs text-gray-500 mt-1">{notification.date}</p>
-                                  </div>
-                                </div>
-                                <motion.button 
-                                  whileHover={{ scale: 1.1, rotate: 90 }}
-                                  whileTap={{ scale: 0.9 }}
-                                  className="text-gray-400 hover:text-gray-600 p-1"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    removeNotification(notification.id);
-                                  }}
-                                >
-                                  <X size={16} />
-                                </motion.button>
-                              </div>
-                            </motion.div>
-                          ))}
-
-                          {justificationRequests.map((notification) => (
-                            <motion.div 
-                              key={notification.id}
-                              className="border-l-4 border-l-orange-500 hover:bg-orange-50"
-                            >
-                              <div className="p-4" onClick={() => handleJustificationClick(notification.attendance)}>
-                                <div className="flex items-start space-x-3">
-                                  <div className="p-2 bg-orange-100 rounded-lg">
-                                    <FileText className="h-4 w-4 text-orange-500" />
-                                  </div>
-                                  <div>
-                                    <p className="text-sm font-medium">
-                                      Nouvelle demande de justification
-                                    </p>
-                                    <p className="text-xs text-gray-500">
-                                      {notification.attendance?.learner.firstName} {notification.attendance?.learner.lastName}
-                                    </p>
-                                    <p className="text-xs text-gray-400">
-                                      {format(new Date(notification.createdAt || ''), 'PPp', { locale: fr })}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            </motion.div>
-                          ))}
-                        </div>
-                      )}
+                      {renderNotifications()}
                     </div>
                     
                     <div className="p-4 border-t bg-gray-50">

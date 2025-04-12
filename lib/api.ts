@@ -99,6 +99,24 @@ interface Notification {
   }
 }
 
+// Ajoutez cette interface avec les autres interfaces
+export interface NotificationResponse {
+  id: string;
+  type: 'JUSTIFICATION_SUBMITTED';
+  message: string;
+  createdAt: string;
+  read: boolean;
+  attendanceId: string;
+  sender: {
+    id: string;
+    email: string;
+  };
+  receiver: {
+    id: string;
+    email: string;
+  };
+}
+
 // Create an Axios instance with base URL and default headers
 const api = axios.create({
   // baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://odc-inside-back.onrender.com',
@@ -137,6 +155,33 @@ api.interceptors.response.use(
         localStorage.removeItem('user');
         window.location.href = '/';
       }
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Ajoutez ceci près des autres intercepteurs
+api.interceptors.response.use(
+  (response) => {
+    // Log uniquement les requêtes liées aux notifications
+    if (response.config.url?.includes('notifications')) {
+      console.log('Notification API Response:', {
+        url: response.config.url,
+        method: response.config.method,
+        status: response.status,
+        data: response.data
+      });
+    }
+    return response;
+  },
+  (error) => {
+    if (error.config.url?.includes('notifications')) {
+      console.error('Notification API Error:', {
+        url: error.config.url,
+        method: error.config.method,
+        status: error.response?.status,
+        message: error.message
+      });
     }
     return Promise.reject(error);
   }
@@ -948,6 +993,39 @@ export const attendanceAPI = {
   getJustificationRequests: async () => {
     const response = await api.get('/attendance/justification-requests');
     return response.data;
+  },
+
+  getUnreadNotifications: async () => {
+    const response = await api.get('/notifications');
+    return response.data;
+  },
+
+  markNotificationAsRead: async (notificationId: string) => {
+    const response = await api.patch(`/notifications/${notificationId}/read`);
+    return response.data;
+  },
+};
+
+// Ajoutez un nouvel objet pour les méthodes de notification
+export const notificationsAPI = {
+  getUnread: async (): Promise<NotificationResponse[]> => {
+    const response = await api.get('/notifications');
+    return response.data;
+  },
+
+  markAsRead: async (notificationId: string): Promise<NotificationResponse> => {
+    const response = await api.patch(`/notifications/${notificationId}/read`);
+    return response.data;
+  },
+
+  getNotificationsByAttendance: async (attendanceId: string): Promise<NotificationResponse[]> => {
+    const response = await api.get(`/notifications/attendance/${attendanceId}`);
+    return response.data;
+  },
+
+  // Pour tester les websockets
+  testNotification: async (): Promise<void> => {
+    await api.post('/notifications/test');
   }
 };
 

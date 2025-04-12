@@ -15,23 +15,26 @@ import { fr } from "date-fns/locale"
 import { toast } from 'sonner'
 
 interface JustificationReviewModalProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen: boolean;
+  onClose: () => void;
   attendance: {
-    id: string
-    date: string
-    isLate: boolean
-    justification: string
-    documentUrl?: string
+    id: string;
+    date: string;
+    isLate: boolean;
+    isPresent: boolean;
+    status: string;
+    justification: string;
+    documentUrl?: string;
     learner: {
-      firstName: string
-      lastName: string
-      matricule: string
-      photoUrl?: string
-    }
-  } | null // Rendre explicitement nullable
-  onApprove: (id: string, comment: string) => Promise<void>
-  onReject: (id: string, comment: string) => Promise<void>
+      firstName: string;
+      lastName: string;
+      matricule: string;
+      photoUrl?: string | null;
+      referential?: string;
+    };
+  } | null;
+  onApprove: (id: string, comment: string) => Promise<void>;
+  onReject: (id: string, comment: string) => Promise<void>;
 }
 
 export default function JustificationReviewModal({
@@ -107,21 +110,27 @@ export default function JustificationReviewModal({
               {/* Informations de l'apprenant */}
               <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
                 <div className="h-12 w-12 rounded-full overflow-hidden bg-gray-200">
-                  <motion.img 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                    src={attendance.learner.photoUrl || "https://via.placeholder.com/48"}
-                    alt={`${attendance.learner.firstName} ${attendance.learner.lastName}`}
-                    className="h-full w-full object-cover"
-                  />
+                  {attendance && (
+                    <motion.img 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.3 }}
+                      src={attendance.learner?.photoUrl || "/default-avatar.png"} // Use a local default image
+                      alt={`${attendance.learner?.firstName || ''} ${attendance.learner?.lastName || ''}`}
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "/default-avatar.png"; // Fallback if image fails to load
+                      }}
+                    />
+                  )}
                 </div>
                 <div>
                   <h3 className="font-medium">
-                    {attendance.learner.firstName} {attendance.learner.lastName}
+                    {attendance?.learner?.firstName} {attendance?.learner?.lastName}
                   </h3>
                   <p className="text-sm text-gray-500">
-                    {attendance.learner.matricule}
+                    {attendance?.learner?.matricule || 'N/A'}
                   </p>
                 </div>
               </div>

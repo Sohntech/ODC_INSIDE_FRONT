@@ -21,6 +21,7 @@ import {
 } from "./types"
 import { toast } from "sonner"
 import JustificationReviewModal from "@/components/modals/JustificationReviewModal"
+import { useRouter, useSearchParams } from 'next/navigation'
 
 // First, define the status options constant at the top of the file
 const STATUS_OPTIONS = [
@@ -76,6 +77,10 @@ interface AttendanceRecord {
 }
 
 export default function AttendancePage() {
+  // Add this near the top of your component
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   // États pour les filtres
   const [dateFilter, setDateFilter] = useState<DateFilterType>('day')
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0])
@@ -243,6 +248,99 @@ export default function AttendancePage() {
 
     fetchData();
   }, [dateFilter, selectedDate]);
+
+  useEffect(() => {
+    const justifyId = searchParams?.get('justify');
+    if (justifyId) {
+      // Find the attendance record with this ID
+      const attendance = attendanceRecords.find(record => record.id === justifyId);
+      if (attendance) {
+        console.log('Found attendance to justify:', attendance); // Debug log
+        
+        // Show the justification modal with this attendance
+        setSelectedAttendance({
+          id: attendance.id,
+          date: attendance.date,
+          isLate: attendance.isLate,
+          isPresent: attendance.isPresent,
+          status: attendance.status,
+          justification: attendance.justification || "",
+          documentUrl: attendance.documentUrl,
+          learner: {
+            firstName: attendance.learner.firstName,
+            lastName: attendance.learner.lastName,
+            matricule: attendance.learner.matricule || "",
+            photoUrl: attendance.learner.photoUrl,
+            referential: attendance.learner.referential
+          }
+        });
+        setShowJustificationModal(true);
+      } else {
+        console.log('Attendance record not found for ID:', justifyId); // Debug log
+        // Optionally show an error message
+        toast.error('Justification introuvable');
+      }
+    }
+  }, [searchParams, attendanceRecords]);
+
+  useEffect(() => {
+    // Listen for custom event
+    const handleJustificationRequest = (event: CustomEvent) => {
+      const justifyId = event.detail.attendanceId;
+      const attendance = attendanceRecords.find(record => record.id === justifyId);
+      
+      if (attendance) {
+        setSelectedAttendance({
+          id: attendance.id,
+          date: attendance.date,
+          isLate: attendance.isLate,
+          isPresent: attendance.isPresent,
+          status: attendance.status,
+          justification: attendance.justification || "",
+          documentUrl: attendance.documentUrl,
+          learner: {
+            firstName: attendance.learner.firstName,
+            lastName: attendance.learner.lastName,
+            matricule: attendance.learner.matricule || "",
+            photoUrl: attendance.learner.photoUrl,
+            referential: attendance.learner.referential
+          }
+        });
+        setShowJustificationModal(true);
+      }
+    };
+  
+    window.addEventListener('justificationRequest', handleJustificationRequest as EventListener);
+    
+    // Check URL params on mount
+    const justifyId = new URLSearchParams(window.location.search).get('justify');
+    if (justifyId) {
+      const attendance = attendanceRecords.find(record => record.id === justifyId);
+      if (attendance) {
+        setSelectedAttendance({
+          id: attendance.id,
+          date: attendance.date,
+          isLate: attendance.isLate,
+          isPresent: attendance.isPresent,
+          status: attendance.status,
+          justification: attendance.justification || "",
+          documentUrl: attendance.documentUrl,
+          learner: {
+            firstName: attendance.learner.firstName,
+            lastName: attendance.learner.lastName,
+            matricule: attendance.learner.matricule || "",
+            photoUrl: attendance.learner.photoUrl,
+            referential: attendance.learner.referential
+          }
+        });
+        setShowJustificationModal(true);
+      }
+    }
+  
+    return () => {
+      window.removeEventListener('justificationRequest', handleJustificationRequest as EventListener);
+    };
+  }, [attendanceRecords]);
 
   // Filtrage des enregistrements
   const filteredRecords = attendanceRecords.filter(record => {
@@ -665,25 +763,66 @@ export default function AttendancePage() {
       {/* Justification Review Modal */}
       <JustificationReviewModal
         isOpen={showJustificationModal}
-        onClose={handleCloseModal}
+        onClose={() => {
+          handleCloseModal();
+          // Update URL without the justify parameter
+          const url = new URL(window.location.href);
+          url.searchParams.delete('justify');
+          window.history.pushState({}, '', url);
+        }}
         attendance={selectedAttendance}
         onApprove={async (id, comment) => {
           try {
-            await handleStatusUpdate(id, 'APPROVED', comment)
-            handleCloseModal()
+            await handleStatusUpdate(id, 'APPROVED', comment);
+            handleCloseModal();
+            // Refresh the data after approval
+            fetchStats();
+            // Update URL
+            const url = new URL(window.location.href);
+            url.searchParams.delete('justify');
+            window.history.pushState({}, '', url);
           } catch (error) {
-            console.error('Error approving:', error)
+            console.error('Error approving:', error);
+            toast.error('Erreur lors de l\'approbation');
           }
         }}
         onReject={async (id, comment) => {
           try {
-            await handleStatusUpdate(id, 'REJECTED', comment)
-            handleCloseModal()
+            await handleStatusUpdate(id, 'REJECTED', comment);
+            handleCloseModal();
+            // Refresh the data after rejection
+            fetchStats();
+            // Update URL
+            const url = new URL(window.location.href);
+            url.searchParams.delete('justify');
+            window.history.pushState({}, '', url);
           } catch (error) {
-            console.error('Error rejecting:', error)
+            console.error('Error rejecting:', error);
+            toast.error('Erreur lors du rejet');
           }
         }}
       />
+
+      {/* Test Notification Button */}
+      <Button
+        onClick={() => {
+          toast.info('Test notification', {
+            duration: 5000,
+            action: {
+              label: "Test",
+              onClick: () => console.log('Test clicked')
+            }
+          });
+        }}
+      >
+        Test Notification
+      </Button>
+
+      {/* Debug info - remove in production */}
+      <div className="hidden">
+        <p>Modal Open: {showJustificationModal ? 'Yes' : 'No'}</p>
+        <p>Selected Attendance: {JSON.stringify(selectedAttendance, null, 2)}</p>
+      </div>
     </div>
   )
 }

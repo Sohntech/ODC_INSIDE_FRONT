@@ -3,6 +3,9 @@ import { ReactNode } from 'react';
 
 // Move these interfaces to the top of the file and export them
 export interface LearnerDetails {
+  documents: boolean;
+  tutor: any;
+  kit: any;
   id: string;
   matricule: string;
   firstName: string;

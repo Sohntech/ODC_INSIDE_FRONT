@@ -56,8 +56,6 @@ export default function DashboardSidebar({ isOpen, setIsOpen, userRole = 'ADMIN'
         { href: '/dashboard', label: 'Tableau de bord', icon: <Home size={20} /> },
         { href: '/dashboard/profile', label: 'Mon Profil', icon: <Users size={20} /> },
         { href: '/dashboard/attendance/my', label: 'Ma Présence', icon: <FileText size={20} /> },
-        { href: '/dashboard/modules', label: 'Modules', icon: <Book size={20} /> },
-        { href: '/dashboard/qrcode', label: 'Mon QR Code', icon: <QrCode size={20} /> },
       ],
       VIGIL: [
         { href: '/dashboard', label: 'Tableau de bord', icon: <Home size={20} /> },

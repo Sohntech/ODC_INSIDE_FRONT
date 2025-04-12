@@ -5,7 +5,7 @@ import { Module } from '@/lib/api';
 
 // Ajoutez cette fonction helper en haut du fichier
 const getImageUrl = (path: string | undefined) => {
-  if (!path) return null;
+  if (!path) return undefined;
   // Si l'URL est déjà complète (commence par http ou https)
   if (path.startsWith('http')) {
     return path;

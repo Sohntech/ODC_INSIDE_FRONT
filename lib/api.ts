@@ -73,6 +73,32 @@ export interface ReplacementResponse {
   replacementLearner: Learner;
 }
 
+// Ajoutez à l'interface existante
+interface Notification {
+  id: string;
+  type: 'JUSTIFICATION_REQUEST';
+  attendanceId: string;
+  createdAt: string;
+  read: boolean;
+  attendance: {
+    id: string;
+    date: string;
+    isLate: boolean;
+    justification: string;
+    documentUrl?: string;
+    learner: {
+      firstName: string;
+      lastName: string;
+      matricule: string;
+      photoUrl?: string;
+      referential: {
+        id: string;
+        name: string;
+      }
+    }
+  }
+}
+
 // Create an Axios instance with base URL and default headers
 const api = axios.create({
   // baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://odc-inside-back.onrender.com',
@@ -227,6 +253,9 @@ export interface Module {
   };
 }
 
+// Mise à jour du type AbsenceStatus
+type AbsenceStatus = 'TO_JUSTIFY' | 'PENDING' | 'APPROVED' | 'REJECTED';
+
 export interface LearnerAttendance {
   id: string;
   learnerId: string;
@@ -234,7 +263,7 @@ export interface LearnerAttendance {
   scanTime?: string;
   isPresent: boolean;
   isLate: boolean;
-  status?: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  status: AbsenceStatus;
   justification?: string;
   documentUrl?: string;
   justificationComment?: string;
@@ -705,12 +734,8 @@ type ApiScanResponse = {
 // Update the attendance API methods
 export const attendanceAPI = {
   getAttendanceByLearner: async (learnerId: string) => {
-    try {
-      const response = await api.get(`/learners/${learnerId}/attendance`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.get(`/attendance/learner/${learnerId}`);
+    return response.data;
   },
   
   getDailyStats: async (date: string): Promise<AttendanceStats> => {
@@ -888,7 +913,42 @@ export const attendanceAPI = {
   },
 
   // Update this method to match your backend controller
+  submitJustification: async (
+    attendanceId: string,
+    justification: string,
+    document?: File
+  ) => {
+    const formData = new FormData();
+    formData.append('justification', justification);
+    if (document) {
+      formData.append('document', document);
+    }
+
+    const response = await api.post(`/attendance/absence/${attendanceId}/justify`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    return response.data;
+  },
  
+  updateJustificationStatus: async (
+    attendanceId: string,
+    status: 'APPROVED' | 'REJECTED',
+    comment?: string
+  ) => {
+    const response = await api.put(`/attendance/absence/${attendanceId}/status`, {
+      status,
+      comment
+    });
+    return response.data;
+  },
+
+  getJustificationRequests: async () => {
+    const response = await api.get('/attendance/justification-requests');
+    return response.data;
+  }
 };
 
 // Promotions API calls

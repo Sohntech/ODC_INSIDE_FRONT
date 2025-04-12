@@ -9,8 +9,6 @@ import {
   Users, 
   Book, 
   FileText,
-  LogOut,
-  AlertTriangle,
   Folder,
   Laptop,
   BarChart,
@@ -28,7 +26,6 @@ interface SidebarProps {
 
 export default function DashboardSidebar({ isOpen, setIsOpen, userRole = 'ADMIN' }: SidebarProps) {
   const pathname = usePathname();
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const getNavigationLinks = () => {
     // Common links for all roles with updated icons matching the mockup
@@ -79,14 +76,6 @@ export default function DashboardSidebar({ isOpen, setIsOpen, userRole = 'ADMIN'
   };
 
   const links = getNavigationLinks();
-
-  const handleLogout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('user');
-      window.location.href = '/';
-    }
-  };
 
   return (
     <>
@@ -154,54 +143,9 @@ export default function DashboardSidebar({ isOpen, setIsOpen, userRole = 'ADMIN'
           {/* Sidebar footer */}
           <div className="p-4 mt-auto">
             <div className="h-px bg-gray-100 mb-4"></div>
-            <button 
-              className="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
-              onClick={() => setShowLogoutModal(true)}
-            >
-              <LogOut size={16} />
-              <span className="ml-2">Déconnexion</span>
-            </button>
           </div>
         </div>
       </div>
-
-      {/* Logout Confirmation Modal */}
-      <Modal
-        isOpen={showLogoutModal}
-        onClose={() => setShowLogoutModal(false)}
-      >
-        <div className="text-center p-1">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
-            <AlertTriangle className="h-6 w-6 text-red-500" />
-          </div>
-          <div className="mt-3">
-            <h3 className="text-lg font-medium text-gray-900">
-              Confirmer la déconnexion
-            </h3>
-            <div className="mt-2">
-              <p className="text-sm text-gray-600">
-                Êtes-vous sûr de vouloir vous déconnecter ?
-              </p>
-            </div>
-          </div>
-          <div className="mt-4 flex justify-center space-x-3">
-            <button
-              type="button"
-              className="inline-flex justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-              onClick={() => setShowLogoutModal(false)}
-            >
-              Annuler
-            </button>
-            <button
-              type="button"
-              className="inline-flex justify-center rounded-lg border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors"
-              onClick={handleLogout}
-            >
-              Déconnexion
-            </button>
-          </div>
-        </div>
-      </Modal>
     </>
   );
 }

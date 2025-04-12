@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Image from "next/image"
 import { attendanceAPI, learnersAPI, type Learner, type LearnerAttendance } from "@/lib/api"
 import { Search, Download, MoreVertical, Users, CheckCircle, Clock, AlertTriangle } from "lucide-react"
@@ -16,9 +16,11 @@ import {
   DateFilterType, 
   AttendanceStats, 
   DATE_FILTER_OPTIONS,
-  AttendanceRecord,
-  AttendanceFilters
+  AttendanceFilters,
+  JustificationStatus
 } from "./types"
+import { toast } from "sonner"
+import JustificationReviewModal from "@/components/modals/JustificationReviewModal"
 
 // First, define the status options constant at the top of the file
 const STATUS_OPTIONS = [
@@ -52,6 +54,27 @@ const formatDateForInput = (date: string, filterType: DateFilterType): string =>
   }
 };
 
+// Premièrement, définissez correctement le type AttendanceRecord
+interface AttendanceRecord {
+  id: string;
+  date: string;
+  isLate: boolean;
+  isPresent: boolean;
+  scanTime?: string;
+  status?: 'TO_JUSTIFY' | 'PENDING' | 'APPROVED' | 'REJECTED';
+  justification?: string;
+  documentUrl?: string;
+  learner: {
+    firstName: string;
+    lastName: string;
+    matricule: string;
+    photoUrl?: string;
+    referential?: {
+      name: string;
+    };
+  };
+}
+
 export default function AttendancePage() {
   // États pour les filtres
   const [dateFilter, setDateFilter] = useState<DateFilterType>('day')
@@ -77,6 +100,41 @@ export default function AttendancePage() {
   // Add this near your other state declarations
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [isLoadingRecords, setIsLoadingRecords] = useState(true);
+
+  // Ajoutez l'état pour le modal
+  const [selectedAttendance, setSelectedAttendance] = useState<AttendanceRecord | null>(null)
+  const [showJustificationModal, setShowJustificationModal] = useState(false)
+
+  const handleCloseModal = useCallback(() => {
+    // Nettoyer les attributs
+   
+    
+    setShowJustificationModal(false)
+    // Attendre que l'animation de fermeture soit terminée
+    setTimeout(() => {
+      setSelectedAttendance(null)
+    }, 300)
+  }, [])
+
+  const handleJustificationClick = useCallback((attendance: AttendanceRecord) => {
+    setSelectedAttendance(attendance)
+    setShowJustificationModal(true)
+  }, [])
+
+  const handleStatusUpdate = async (attendanceId: string, status: 'APPROVED' | 'REJECTED', comment?: string) => {
+    try {
+      await attendanceAPI.updateJustificationStatus(attendanceId, status, comment);
+      await fetchStats(); // Recharger les données
+      toast.success(
+        status === 'APPROVED' 
+          ? 'Justification approuvée avec succès' 
+          : 'Justification rejetée'
+      );
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error('Erreur lors de la mise à jour du statut');
+    }
+  };
 
   // Add this function to handle different date input types
   const getDateInputType = () => {
@@ -342,7 +400,7 @@ export default function AttendancePage() {
 
         {/* Search */}
         <div className="relative flex-grow">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-auto">
             <Search className="h-5 w-5 text-gray-400" />
           </div>
           <Input
@@ -510,7 +568,7 @@ export default function AttendancePage() {
                         <span className="px-2 py-1 text-xs rounded-full bg-amber-500 text-white">
                           En attente
                         </span>
-                      ) : record.status === "ACCEPTED" ? (
+                      ) : record.status === "APPROVED" ? (
                         <span className="px-2 py-1 text-xs rounded-full bg-emerald-500 text-white">
                           Justifié
                         </span>
@@ -525,20 +583,37 @@ export default function AttendancePage() {
                       )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
-                            <MoreVertical className="h-4 w-4" />
-                            <span className="sr-only">Menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Modifier</DropdownMenuItem>
-                          {(record.isLate || !record.isPresent) && (
-                            <DropdownMenuItem>Justifier</DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {(record.isLate || !record.isPresent) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            handleJustificationClick({
+                              id: record.id,
+                              date: record.date,
+                              isLate: record.isLate,
+                              isPresent: record.isPresent,
+                              status: record.status,
+                              justification: record.justification || "",
+                              documentUrl: record.documentUrl,
+                              learner: {
+                                firstName: record.learner.firstName,
+                                lastName: record.learner.lastName,
+                                matricule: record.learner.matricule || "",
+                                photoUrl: record.learner.photoUrl,
+                                referential: record.learner.referential
+                              }
+                            })
+                          }}
+                          className={`${
+                            record.status === 'PENDING' 
+                              ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-50'
+                              : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
+                          }`}
+                        >
+                          {record.status === 'PENDING' ? 'Voir la justification' : 'Vérifier'}
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -586,6 +661,29 @@ export default function AttendancePage() {
 
       {/* Footer */}
       <div className="mt-6 text-center text-sm text-gray-500">© 2025 Orange Digital Center. Tous droits réservés.</div>
+
+      {/* Justification Review Modal */}
+      <JustificationReviewModal
+        isOpen={showJustificationModal}
+        onClose={handleCloseModal}
+        attendance={selectedAttendance}
+        onApprove={async (id, comment) => {
+          try {
+            await handleStatusUpdate(id, 'APPROVED', comment)
+            handleCloseModal()
+          } catch (error) {
+            console.error('Error approving:', error)
+          }
+        }}
+        onReject={async (id, comment) => {
+          try {
+            await handleStatusUpdate(id, 'REJECTED', comment)
+            handleCloseModal()
+          } catch (error) {
+            console.error('Error rejecting:', error)
+          }
+        }}
+      />
     </div>
   )
 }

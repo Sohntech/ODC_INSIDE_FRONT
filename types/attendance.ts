@@ -37,3 +37,17 @@ export interface CoachScanResponse extends BaseScanResponse {
 }
 
 export type ScanResponse = LearnerScanResponse | CoachScanResponse;
+
+export type AbsenceStatus = 'TO_JUSTIFY' | 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface Attendance {
+  id: string;
+  date: string;
+  scanTime?: string;
+  isPresent: boolean;
+  isLate: boolean;
+  status: AbsenceStatus;
+  justification?: string;
+  documentUrl?: string;
+  justificationComment?: string;
+}

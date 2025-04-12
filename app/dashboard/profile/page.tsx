@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { learnersAPI } from "@/lib/api"
-import type { LearnerDetails } from "@/lib/api"
+import type { LearnerDetails} from "@/lib/api"
 import { UserCircle, GraduationCap, PackageCheck, Files } from 'lucide-react'
 
 export default function ProfilePage() {
@@ -370,7 +370,7 @@ function LearnerProfile({ learner }: { learner: LearnerDetails }) {
                 <CardTitle>Documents</CardTitle>
               </CardHeader>
               <CardContent>
-                {learner.documents && learner.documents.length > 0 ? (
+                {Array.isArray(learner.documents) && learner.documents.length > 0 ? (
                   <div className="grid gap-4">
                     {learner.documents.map((doc) => (
                       <div

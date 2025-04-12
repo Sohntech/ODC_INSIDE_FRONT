@@ -12,16 +12,51 @@ import { Clock, Calendar, CheckCircle2, XCircle, Search } from "lucide-react"
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import Pagination from '@/components/common/Pagination'
+import { toast } from "sonner"
+import { attendanceAPI } from "@/lib/api"
+import { AbsenceStatus } from '@/types/attendance'
+
+// Helper function for status badges
+function getStatusBadge(status: AbsenceStatus | undefined) {
+  switch (status) {
+    case 'TO_JUSTIFY':
+      return (
+        <Badge className="bg-blue-50 text-blue-700 text-xs sm:text-sm">
+          À justifier
+        </Badge>
+      );
+    case 'PENDING':
+      return (
+        <Badge className="bg-yellow-50 text-yellow-700 text-xs sm:text-sm">
+          En attente
+        </Badge>
+      );
+    case 'APPROVED':
+      return (
+        <Badge className="bg-green-50 text-green-700 text-xs sm:text-sm">
+          Justifié
+        </Badge>
+      );
+    case 'REJECTED':
+      return (
+        <Badge className="bg-red-50 text-red-700 text-xs sm:text-sm">
+          Rejeté
+        </Badge>
+      );
+    default:
+      return null;
+  }
+}
 
 export default function MyAttendancePage() {
   const [attendances, setAttendances] = useState<{ 
-    id: string; 
+    id: string, 
     date: string; 
-    isPresent: boolean; 
+    isPresent: boolean, 
     isLate: boolean; 
     scanTime: string | null; 
     justification?: string; 
-    status: "PENDING" | "REJECTED" | "APPROVED"; 
+    status: "TO_JUSTIFY" |  "PENDING" | "REJECTED" | "APPROVED"; 
   }[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -33,14 +68,15 @@ export default function MyAttendancePage() {
     isLate: boolean;
     scanTime: string | null;
     justification?: string;
-    status: "PENDING" | "REJECTED" | "APPROVED";
+    status:     "TO_JUSTIFY" | "PENDING" | "REJECTED" | "APPROVED";
   } | null>(null)
   const [justification, setJustification] = useState("")
-  const [file, setFile] = useState<File | null>(null)
+  const [file, setFile] = useState<File | undefined>(undefined)
   const [stats, setStats] = useState({ present: 0, absent: 0, late: 0, total: 0 })
   const [searchDate, setSearchDate] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [submitting, setSubmitting] = useState(false) // Add this state
 
   const filteredAttendances = attendances
     .filter(attendance => {
@@ -81,6 +117,19 @@ export default function MyAttendancePage() {
     fetchAttendance()
   }, [])
 
+  // Nouveau hook pour vérifier les absences à justifier
+  useEffect(() => {
+    const unjustifiedCount = attendances.filter(
+      att => att.status === 'TO_JUSTIFY'
+    ).length;
+  
+    if (unjustifiedCount > 0) {
+      toast.warning(`Vous avez ${unjustifiedCount} absence(s)/retard(s) à justifier`, {
+        duration: 5000,
+      });
+    }
+  }, [attendances]);
+
   const handleJustify = (attendance) => {
     setSelectedAttendance(attendance)
     setShowJustifyModal(true)
@@ -88,16 +137,90 @@ export default function MyAttendancePage() {
 
   const submitJustification = async () => {
     try {
-      // Add your API call here to submit justification
-      // await attendanceAPI.submitJustification(selectedAttendance.id, justification, file)
-      setShowJustifyModal(false)
-      setJustification("")
-      setFile(null)
-      // Refresh attendance data
+      if (!selectedAttendance || !justification.trim()) {
+        toast.error("Veuillez saisir une justification");
+        return;
+      }
+
+      setSubmitting(true); // Use submitting instead of loading
+
+      await attendanceAPI.submitJustification(
+        selectedAttendance.id,
+        justification,
+        file || undefined
+      );
+
+      // Refresh attendance data after submission
+      const userStr = localStorage.getItem('user');
+      if (!userStr) throw new Error('User not found');
+      
+      const user = JSON.parse(userStr);
+      const learnerDetails = await learnersAPI.getLearnerByEmail(user.email);
+      setAttendances(learnerDetails.attendances || []);
+
+      setShowJustifyModal(false);
+      setJustification("");
+      setFile(undefined);
+      
+      toast.success("Justification soumise avec succès");
     } catch (err) {
-      console.error('Error submitting justification:', err)
+      console.error('Error submitting justification:', err);
+      toast.error("Erreur lors de la soumission de la justification");
+    } finally {
+      setSubmitting(false);
     }
-  }
+  };
+
+  const renderJustificationCell = (attendance) => {
+    return (
+      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm">
+        {attendance.isPresent && !attendance.isLate ? (
+          <span className="text-gray-400">-</span>
+        ) : (
+          getStatusBadge(attendance.status)
+        )}
+      </td>
+    );
+  };
+
+  const renderActionCell = (attendance) => {
+    return (
+      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm">
+        {(attendance.isLate || !attendance.isPresent) && (
+          attendance.status === 'TO_JUSTIFY' ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleJustify(attendance)}
+              className="text-xs sm:text-sm text-blue-600 hover:text-blue-700"
+            >
+              Justifier
+            </Button>
+          ) : attendance.status === 'REJECTED' ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleJustify(attendance)}
+              className="text-xs sm:text-sm text-red-600 hover:text-red-700"
+            >
+              Rejustifier
+            </Button>
+          ) : attendance.status === 'PENDING' ? (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled
+              className="text-xs sm:text-sm text-yellow-600"
+            >
+              En cours
+            </Button>
+          ) : (
+            <span className="text-gray-400">-</span>
+          )
+        )}
+      </td>
+    );
+  };
 
   if (loading) {
     return (
@@ -220,28 +343,8 @@ export default function MyAttendancePage() {
                         </Badge>
                       )}
                     </td>
-                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                      {attendance.isPresent && !attendance.isLate ? (
-                        <span className="text-gray-400">-</span>
-                      ) : (
-                        <JustificationStatus status={attendance.status} />
-                      )}
-                    </td>
-                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm">
-                      {(attendance.isLate || !attendance.isPresent) &&
-                       attendance.status !== 'APPROVED' ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleJustify(attendance)}
-                          className="text-xs sm:text-sm"
-                        >
-                          Justifier
-                        </Button>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </td>
+                    {renderJustificationCell(attendance)}
+                    {renderActionCell(attendance)}
                   </tr>
                 ))}
               </tbody>
@@ -266,30 +369,65 @@ export default function MyAttendancePage() {
           <DialogHeader>
             <DialogTitle>Justifier votre {selectedAttendance?.isLate ? 'retard' : 'absence'}</DialogTitle>
             <DialogDescription>
-              Veuillez fournir une justification et joindre un document si nécessaire.
+              {selectedAttendance?.status === 'TO_JUSTIFY' 
+                ? "Veuillez fournir une justification pour votre absence/retard."
+                : "Veuillez soumettre une nouvelle justification."}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <Textarea
-              placeholder="Saisissez votre justification ici..."
-              value={justification}
-              onChange={(e) => setJustification(e.target.value)}
-            />
-            <div className="grid w-full max-w-sm items-center gap-1.5">
-              <Input
-                type="file"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-              />
+          
+          {submitting ? (
+            <div className="min-h-[200px] flex flex-col items-center justify-center gap-4">
+              <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-gray-500">Envoi de la justification...</p>
             </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowJustifyModal(false)}>
-              Annuler
-            </Button>
-            <Button onClick={submitJustification}>
-              Envoyer
-            </Button>
-          </DialogFooter>
+          ) : (
+            <>
+              <div className="space-y-4">
+                <Textarea
+                  placeholder="Saisissez votre justification ici..."
+                  value={justification}
+                  onChange={(e) => setJustification(e.target.value)}
+                  className="min-h-[100px]"
+                  required
+                />
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-500">
+                    Document justificatif (optionnel)
+                  </p>
+                  <Input
+                    type="file"
+                    onChange={(e) => setFile(e.target.files?.[0] || undefined)}
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="cursor-pointer"
+                  />
+                  {file && (
+                    <p className="text-sm text-gray-500">
+                      Fichier sélectionné : {file.name}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowJustifyModal(false);
+                    setJustification("");
+                    setFile(undefined);
+                  }}
+                >
+                  Annuler
+                </Button>
+                <Button 
+                  onClick={submitJustification}
+                  disabled={!justification.trim()}
+                  className="bg-orange-500 hover:bg-orange-600"
+                >
+                  Envoyer
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>
@@ -402,3 +540,52 @@ function JustificationStatus({ status }) {
       return null
   }
 }
+
+// Removed duplicate implementation of getStatusBadge
+
+// Mise à jour de la colonne Justification
+<>
+    // Removed duplicate implementation of getStatusBadge
+    // Mise à jour de la colonne Justification
+    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm">
+        {attendanceAPI.isPresent && !attendanceAPI.isLate ? (
+            <span className="text-gray-400">-</span>
+        ) : (
+            getStatusBadge(attendanceAPI.status)
+        )}
+    </td>
+    // Mise à jour de la colonne Actions
+    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm">
+        {(attendanceAPI.isLate || !attendanceAPI.isPresent) && (
+            attendanceAPI.status === 'TO_JUSTIFY' ? (
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleJustify(attendanceAPI)}
+                    className="text-xs sm:text-sm text-blue-600 hover:text-blue-700"
+                >
+                    Justifier
+                </Button>
+            ) : attendanceAPI.status === 'REJECTED' ? (
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleJustify(attendance)}
+                    className="text-xs sm:text-sm text-red-600 hover:text-red-700"
+                >
+                    Rejustifier
+                </Button>
+            ) : attendanceAPI.status === 'PENDING' ? (
+                <Button
+                    variant="outline"
+                    size="sm"
+                    disabled
+                    className="text-xs sm:text-sm text-yellow-600"
+                >
+                    En cours
+                </Button>
+            ) : (
+                <span className="text-gray-400">-</span>
+            )
+        )}
+    </td></>

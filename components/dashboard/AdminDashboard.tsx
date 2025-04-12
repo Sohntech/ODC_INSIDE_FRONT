@@ -55,7 +55,7 @@ export default function AdminDashboard() {
   ])
 
   // Monthly attendance data
-  const [monthlyAttendanceData, setMonthlyAttendanceData] = useState([]) // Initialize as empty array
+  const [monthlyAttendanceData, setMonthlyAttendanceData] = useState<{ name: string; Présence: number; Retard: number; Absences: number; }[]>([]) // Initialize with explicit type
 
   const [chartKey, setChartKey] = useState(Date.now())
 
@@ -155,7 +155,7 @@ export default function AdminDashboard() {
     setLoading(true);
   
     try {
-      let chartData = [];
+      let chartData: { name: string; Présence: number; Retard: number; Absences: number; }[] = [];
       const currentMonth = new Date().getMonth() + 1;
   
       switch(value) {

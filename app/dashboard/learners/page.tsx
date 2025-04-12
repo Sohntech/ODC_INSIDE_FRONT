@@ -12,7 +12,7 @@ export default function LearnersPage() {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string[]>(['ACTIVE', 'REMPLACEMENT']);
+  const [statusFilter, setStatusFilter] = useState<string[]>(['ACTIVE', 'REPLACEMENT']);
   const [promotionFilter, setPromotionFilter] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -79,7 +79,7 @@ export default function LearnersPage() {
     { value: 'ACTIVE', label: 'Actif' },
     { value: 'WAITING', label: 'En attente' },
     { value: 'ABANDONED', label: 'Abandon' },
-    { value: 'REMPLACEMENT', label: 'Remplacement' },
+    { value: 'REPLACEMENT', label: 'Remplacement' },
     { value: 'REPLACED', label: 'Remplacé' }
   ];
 
@@ -138,7 +138,7 @@ export default function LearnersPage() {
         return 'bg-blue-100 text-blue-800 border border-blue-200';
       case 'ABANDONED':
         return 'bg-red-100 text-red-800 border border-red-200';
-      case 'REMPLACEMENT':
+      case 'REPLACEMENT':
         return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
       case 'REPLACED':
         return 'bg-orange-100 text-orange-800 border border-orange-200';
@@ -156,7 +156,7 @@ export default function LearnersPage() {
         return 'En attente';
       case 'ABANDONED':
         return 'Abandon';
-      case 'REMPLACEMENT':
+      case 'REPLACEMENT':
         return 'Remplacement';
       case 'REPLACED':
         return 'Remplacé';

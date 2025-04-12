@@ -192,53 +192,63 @@ export default function LearnerDetailsPage() {
             <div className="bg-white rounded-lg shadow-sm mb-6">
               <div className="flex flex-col md:flex-row">
                 {/* Learner info */}
-                <div className="p-6 flex items-center">
-                  <div className="h-24 w-24 rounded-full overflow-hidden mr-4 border-4 border-white shadow-md">
-                    {learner.photoUrl ? (
-                      <img
-                        src={learner.photoUrl || "/placeholder.svg"}
-                        alt={`${learner.firstName} ${learner.lastName}`}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="h-full w-full bg-teal-600 flex items-center justify-center text-white text-xl font-bold">
-                        {`${learner.firstName.charAt(0)}${learner.lastName.charAt(0)}`}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <h1 className="text-2xl font-bold text-gray-800">
-                      {learner.firstName} {learner.lastName}
-                    </h1>
-                    <div className="mt-1">
-                      <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-lg ${
-                        getReferentialBadgeClass(learner.referential?.name || "")
-                      }`}>
-                        {getReferentialAlias(learner.referential?.name || "")}
-                      </span>
+                <div className="p-6 flex items-start justify-between w-fit">
+                  {/* Left side with photo and basic info */}
+                  <div className="flex items-start">
+                    <div className="h-24 w-24 rounded-full overflow-hidden mr-4 border-4 border-white shadow-md">
+                      {learner.photoUrl ? (
+                        <img
+                          src={learner.photoUrl || "/placeholder.svg"}
+                          alt={`${learner.firstName} ${learner.lastName}`}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-full w-full bg-teal-600 flex items-center justify-center text-white text-xl font-bold">
+                          {`${learner.firstName.charAt(0)}${learner.lastName.charAt(0)}`}
+                        </div>
+                      )}
                     </div>
-                    {learner.status === 'ACTIVE' && (
-                      <button
-                        onClick={() => router.push(`/dashboard/learners/${learner.id}/replace`)}
-                        className="ml-4 inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors"
-                      >
-                        <svg
-                          className="w-4 h-4 mr-2"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
-                          />
-                        </svg>
-                        Remplacer l'apprenant
-                      </button>
-                    )}
+                    <div>
+                      <h1 className="text-2xl font-bold text-gray-800">
+                        {learner.firstName} {learner.lastName}
+                      </h1>
+                      <div className="mt-2 space-y-2">
+                        <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-lg ${
+                          getReferentialBadgeClass(learner.referential?.name || "")
+                        }`}>
+                          {getReferentialAlias(learner.referential?.name || "")}
+                        </span>
+                        <span className={`ml-2 inline-flex px-3 py-1 text-sm font-medium rounded-lg ${
+                          getStatusColor(learner.status)
+                        }`}>
+                          {getStatusLabel(learner.status)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Right side with action button */}
+                  {learner.status === 'ACTIVE' && (
+                    <button
+                      onClick={() => router.push(`/dashboard/learners/${learner.id}/replace`)}
+                      className="inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors"
+                    >
+                      <svg
+                        className="w-4 h-4 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                        />
+                      </svg>
+                      Remplacer l'apprenant
+                    </button>
+                  )}
                 </div>
 
                 {/* Stats */}

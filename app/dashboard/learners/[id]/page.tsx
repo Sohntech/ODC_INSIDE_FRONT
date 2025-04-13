@@ -54,40 +54,54 @@ export default function LearnerDetailsPage() {
   useEffect(() => {
     const fetchLearnerData = async () => {
       try {
-        setLoading(true)
-        setError("")
+        setLoading(true);
+        setError("");
 
-        // Fetch learner and attendance data in parallel
-        const [learnerData, attendanceData] = await Promise.all([
-          learnersAPI.getLearnerById(learnerId ?? ""),
-          attendanceAPI.getAttendanceByLearner(learnerId ?? ""),
-        ])
+        // Fetch learner data first
+        const learnerData = await learnersAPI.getLearnerById(learnerId ?? "");
+        setLearner(learnerData);
 
-        setLearner(learnerData)
-        setAttendances(attendanceData)
+        // Then fetch attendance data
+        console.log('Fetching attendance data for learner:', learnerId);
+        const attendanceData = await attendanceAPI.getAttendanceByLearner(learnerId ?? "");
+        console.log('Received attendance data:', attendanceData);
+        
+        if (Array.isArray(attendanceData)) {
+          setAttendances(attendanceData);
 
-        // Calculate stats from the attendance data
-        const stats = {
-          attendance: attendanceData,
-          present: attendanceData.filter(a => a.isPresent && !a.isLate).length,
-          late: attendanceData.filter(a => a.isPresent && a.isLate).length,
-          absent: attendanceData.filter(a => !a.isPresent).length,
-          totalDays: attendanceData.length
+          // Calculate stats from the attendance data
+          const stats = {
+            attendance: attendanceData,
+            present: attendanceData.filter(a => a.isPresent && !a.isLate).length,
+            late: attendanceData.filter(a => a.isPresent && a.isLate).length,
+            absent: attendanceData.filter(a => !a.isPresent).length,
+            totalDays: attendanceData.length
+          };
+          setAttendanceStats(stats);
+        } else {
+          console.error('Unexpected attendance data format:', attendanceData);
+          setAttendances([]);
+          setAttendanceStats({
+            attendance: [],
+            present: 0,
+            late: 0,
+            absent: 0,
+            totalDays: 0
+          });
         }
-        setAttendanceStats(stats)
 
       } catch (err) {
-        console.error("Error fetching learner data:", err)
-        setError("Une erreur est survenue lors du chargement des données")
+        console.error("Error fetching learner data:", err);
+        setError("Une erreur est survenue lors du chargement des données");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
     if (learnerId) {
-      fetchLearnerData()
+      fetchLearnerData();
     }
-  }, [learnerId])
+  }, [learnerId]);
 
   // Format date function
   const formatDate = (dateString: string) => {

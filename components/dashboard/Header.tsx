@@ -12,6 +12,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface HeaderProps {
   toggleSidebar: () => void;

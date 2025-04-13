@@ -778,9 +778,17 @@ type ApiScanResponse = {
 
 // Update the attendance API methods
 export const attendanceAPI = {
-  getAttendanceByLearner: async (learnerId: string) => {
-    const response = await api.get(`/attendance/learner/${learnerId}`);
-    return response.data;
+  getAttendanceByLearner: async (learnerId: string): Promise<LearnerAttendance[]> => {
+    try {
+      console.log('Fetching attendance for learner:', learnerId);
+      // Utiliser le bon endpoint
+      const response = await api.get(`/attendance/learner/${learnerId}`);
+      console.log('Attendance response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching learner attendance:', error);
+      throw error;
+    }
   },
   
   getDailyStats: async (date: string): Promise<AttendanceStats> => {

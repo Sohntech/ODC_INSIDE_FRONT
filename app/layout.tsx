@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import { Toaster } from "sonner";
 import './globals.css'
 import { ThemeProvider } from '@/components/providers/theme-provider'
-import { Toaster } from '@/components/ui/toaster'
 import { QueryProvider } from '@/components/providers/query-provider'
 import { AuthProvider } from '@/components/providers/auth-provider'
 import { NotificationProvider } from '@/components/providers/notification-provider'
@@ -52,7 +52,7 @@ export default function RootLayout({
             <QueryProvider>
               <NotificationProvider>
                 {children}
-                <Toaster />
+                <Toaster richColors closeButton />
               </NotificationProvider>
             </QueryProvider>
           </ThemeProvider>

@@ -6,6 +6,7 @@ import { referentialsAPI, promotionsAPI, modulesAPI, Module, Referential } from 
 import { useRouter } from 'next/navigation';
 import ModuleCard from '@/components/modules/ModuleCard';
 import { ModuleCardSkeleton } from '@/components/skeletons/ModuleSkeleton';
+import { toast } from "sonner";
 
 export default function ModulesPage() {
   const router = useRouter();

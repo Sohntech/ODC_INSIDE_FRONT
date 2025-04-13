@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { promotionsAPI } from '@/lib/api';
 import { Plus, Search, Calendar, Users, Clock, Check, Bookmark, ChevronLeft, ChevronRight, MoreVertical, Filter, PowerIcon, Folder, Book } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 import EnhancedPromotionCard from '@/components/dashboard/EnhancedPromotionCard';
 import CreatePromotionModal from '@/components/dashboard/CreatePromotionModal';
 
@@ -87,62 +87,45 @@ export default function PromotionsPage() {
    
   ];
 
-  const togglePromotionStatus = async (promotionId: string, currentStatus: string) => {
+  async function handleStatusToggle(promotionId: string, currentStatus: 'ACTIVE' | 'INACTIVE') {
     try {
       const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+      const statusText = newStatus === 'ACTIVE' ? 'activée' : 'désactivée';
       
-      // Update the promotion status
       await promotionsAPI.updatePromotionStatus(promotionId, newStatus);
       
-      // Update local state
-      setPromotions(prevPromotions => {
-        return prevPromotions.map(p => {
-          if (p.id === promotionId) {
-            return { ...p, status: newStatus };
-          }
-          // If we're activating a promotion, make sure all others are inactive
-          if (newStatus === 'ACTIVE') {
-            return { ...p, status: p.id === promotionId ? 'ACTIVE' : 'INACTIVE' };
-          }
-          return p;
-        });
+      toast.success(`Promotion ${statusText}`, {
+        description: `La promotion a été ${statusText} avec succès`,
+        action: {
+          label: "Rafraîchir",
+          onClick: () => fetchData()
+        }
       });
-
-      // Show success message
-      toast({
-        variant: 'success',
-        title: "Statut mis à jour",
-        description: `La promotion a été ${newStatus === 'ACTIVE' ? 'activée' : 'désactivée'} avec succès`
-      });
-    } catch (error) {
-      console.error('Error updating promotion status:', error);
-      toast({
-        variant: 'destructive',
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la mise à jour du statut"
+      
+      await fetchData();
+    } catch (error: any) {
+      toast.error("Erreur lors de la mise à jour", {
+        description: error.response?.data?.message || "Impossible de modifier le statut de la promotion",
       });
     }
-  };
+  }
 
-  const handleCreatePromotion = async (promotionData) => {
+  async function handleCreatePromotion(data: PromotionFormData) {
     try {
-      await promotionsAPI.createPromotion(promotionData);
-      toast({
-        variant: "success",
-        title: "Promotion créée",
-        description: "La promotion a été créée avec succès"
+      const response = await promotionsAPI.createPromotion(data);
+      
+      toast.success("Promotion créée", {
+        description: `La promotion ${data.name} a été créée avec succès`,
       });
-      // Refresh promotions list
-      fetchData();
-    } catch (error) {
-      console.error('Error creating promotion:', error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la création de la promotion"
+      
+      await fetchData();
+      setShowAddModal(false);
+    } catch (error: any) {
+      toast.error("Erreur lors de la création", {
+        description: error.response?.data?.message || "Impossible de créer la promotion",
       });
     }
-  };
+  }
 
   // Update the stats section in your render:
   const stats = calculateStats(filteredPromotions);
@@ -368,7 +351,7 @@ export default function PromotionsPage() {
             <EnhancedPromotionCard 
               key={promotion.id} 
               promotion={promotion}
-              onToggleStatus={togglePromotionStatus}
+              onToggleStatus={handleStatusToggle}
             />
           ))}
         </div>
@@ -456,7 +439,7 @@ export default function PromotionsPage() {
                         {promotion.status === 'ACTIVE' ? 'Active' : 'Inactive'}
                       </span>
                       <button
-                        onClick={() => togglePromotionStatus(promotion.id, promotion.status)}
+                        onClick={() => handleStatusToggle(promotion.id, promotion.status)}
                         className={`p-1.5 rounded-full transition-colors duration-200 ${
                           promotion.status === 'ACTIVE' 
                             ? 'bg-red-100 text-red-600 hover:bg-red-200' 

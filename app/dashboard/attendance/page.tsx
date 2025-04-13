@@ -369,6 +369,15 @@ export default function AttendancePage() {
     alert("Fonctionnalité d'export à implémenter")
   }
 
+  const handleSubmit = async () => {
+    try {
+      // ...existing code...
+      toast.success("Présences enregistrées avec succès");
+    } catch (error) {
+      toast.error("Erreur lors de l'enregistrement des présences");
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-6">
       {/* Page header */}

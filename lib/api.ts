@@ -500,7 +500,48 @@ export const learnersAPI = {
     });
     return stats; // Ensure the 'attendance' property is included
     return stats;
-  }
+  },
+
+  createLearner: async (formData: FormData) => {
+    try {
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+        },
+        transformRequest: [function (data) {
+          return data; // Ne pas transformer les données
+        }],
+        timeout: 30000 // 10 secondes timeout
+      };
+
+      console.log('Envoi de la requête avec les données :', 
+        Array.from(formData.entries()).reduce((acc, [key, value]) => {
+          acc[key] = value;
+          return acc;
+        }, {})
+      );
+
+      const response = await api.post('/learners', formData, config);
+      
+      if (!response.data) {
+        throw new Error('Pas de données reçues du serveur');
+      }
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('Error creating learner:', error);
+      if (error.response) {
+        console.error('Server error details:', {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+      }
+      throw error;
+    }
+  },
 };
 
 // Modules API calls

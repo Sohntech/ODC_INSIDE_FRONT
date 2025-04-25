@@ -119,11 +119,11 @@ export default function PromotionsPage() {
       });
       
       await fetchData();
-      setShowAddModal(false);
+      setIsModalOpen(false);
     } catch (error: any) {
-      toast.error("Erreur lors de la création", {
-        description: error.response?.data?.message || "Impossible de créer la promotion",
-      });
+      // toast.error("Erreur lors de la création", {
+      //   description: error.response?.data?.message || "Impossible de créer la promotion",
+      // });
     }
   }
 

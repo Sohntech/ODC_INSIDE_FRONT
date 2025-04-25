@@ -44,10 +44,9 @@ export default function DashboardSidebar({ isOpen, setIsOpen, userRole = 'ADMIN'
       ADMIN: adminLinks,
       COACH: [
         { href: '/dashboard', label: 'Tableau de bord', icon: <Home size={20} /> },
-        { href: '/dashboard/learners', label: 'Apprenants', icon: <Users size={20} /> },
-        { href: '/dashboard/modules', label: 'Modules', icon: <Book size={20} /> },
+        { href: '/dashboard/learners/coach', label: 'Apprenants', icon: <Users size={20} /> },
+        { href: '/dashboard/modules/coach', label: 'Modules', icon: <Book size={20} /> },
         { href: '/dashboard/attendance', label: 'Présence', icon: <FileText size={20} /> },
-        { href: '/dashboard/grades', label: 'Notes', icon: <Clipboard size={20} /> },
       ],
       APPRENANT: [
         { href: '/dashboard', label: 'Tableau de bord', icon: <Home size={20} /> },

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { ReactNode } from 'react';
+import { AttendanceFilters } from './types';
 
 // Move these interfaces to the top of the file and export them
 export interface LearnerDetails {
@@ -283,6 +284,8 @@ export interface Module {
   description?: string;
   photoUrl?: string;
   startDate: string;
+  duration: number;
+  progress: number;
   endDate: string;
   refId: string;
   coachId: string; // Ajout de coachId
@@ -513,7 +516,7 @@ export const learnersAPI = {
         transformRequest: [function (data) {
           return data; // Ne pas transformer les données
         }],
-        timeout: 30000 // 10 secondes timeout
+        timeout: 50000 // 50 secondes timeout
       };
 
       console.log('Envoi de la requête avec les données :', 
@@ -539,6 +542,16 @@ export const learnersAPI = {
           headers: error.response.headers
         });
       }
+      throw error;
+    }
+  },
+
+  getReferentialLearners: async () => {
+    try {
+      const response = await api.get('/learners/referential');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching referential learners:', error);
       throw error;
     }
   },
@@ -603,6 +616,16 @@ export const modulesAPI = {
       return response.data;
     } catch (error) {
       console.error('Error creating module:', error);
+      throw error;
+    }
+  },
+
+  getReferentialModules: async () => {
+    try {
+      const response = await api.get('/modules/referential');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching referential modules:', error);
       throw error;
     }
   },
@@ -741,6 +764,16 @@ export const gradesAPI = {
       const response = await api.delete(`/grades/${id}`);
       return response.data;
     } catch (error) {
+      throw error;
+    }
+  },
+
+  getAllGrades: async () => {
+    try {
+      const response = await api.get('/grades');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching all grades:', error);
       throw error;
     }
   },
@@ -1053,6 +1086,44 @@ export const attendanceAPI = {
     const response = await api.patch(`/notifications/${notificationId}/read`);
     return response.data;
   },
+
+  getReferentialAttendances: async (filters: AttendanceFilters) => {
+    try {
+      const queryParams = new URLSearchParams();
+      if (filters.status) queryParams.append('status', filters.status);
+      queryParams.append('period', filters.period);
+      queryParams.append('date', filters.date);
+
+      const response = await api.get(`/attendances/referential?${queryParams}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching referential attendances:', error);
+      throw error;
+    }
+  },
+
+  handleJustification: async (justificationId: string, status: 'APPROVED' | 'REJECTED', comment?: string) => {
+    try {
+      const response = await api.patch(`/attendances/justifications/${justificationId}`, {
+        status,
+        comment
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error handling justification:', error);
+      throw error;
+    }
+  },
+
+  getJustificationDetails: async (justificationId: string) => {
+    try {
+      const response = await api.get(`/attendances/justifications/${justificationId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching justification details:', error);
+      throw error;
+    }
+  }
 };
 
 // Ajoutez un nouvel objet pour les méthodes de notification
@@ -1140,7 +1211,31 @@ export const promotionsAPI = {
       console.error('Error updating promotion status:', error);
       throw error;
     }
-  }
+  },
+
+  updatePromotion: async (id: string, formData: FormData) => {
+    try {
+      const response = await api.patch(`/promotions/${id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating promotion:', error);
+      throw error;
+    }
+  },
+
+  deletePromotion: async (id: string) => {
+    try {
+      const response = await api.delete(`/promotions/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting promotion:', error);
+      throw error;
+    }
+  },
 };
 
 // Coaches API calls
@@ -1216,6 +1311,80 @@ export const usersAPI = {
     } catch (error) {
       console.error('Error fetching user photo:', error);
       return null;
+    }
+  }
+};
+
+export const coachAPI = {
+  getDashboardStats: async () => {
+    try {
+      const response = await api.get('/coaches/dashboard-stats');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      throw error;
+    }
+  },
+
+  getReferentialLearners: async (status?: string) => {
+    try {
+      const params = new URLSearchParams();
+      if (status) params.append('status', status);
+      
+      const response = await api.get(`/coaches/learners?${params}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching referential learners:', error);
+      throw error;
+    }
+  },
+
+  // Add this new method
+  getReferentialModules: async () => {
+    try {
+      const response = await api.get('/coaches/modules');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching referential modules:', error);
+      throw error;
+    }
+  },
+
+  // Add this method for module details
+  getModuleById: async (id: string) => {
+    try {
+      const response = await api.get(`/coaches/modules/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching module details:', error);
+      throw error;
+    }
+  },
+
+  // Add this method for module grades
+  getModuleGrades: async (moduleId: string) => {
+    try {
+      const response = await api.get(`/coaches/modules/${moduleId}/grades`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching module grades:', error);
+      throw error;
+    }
+  },
+
+  // Add this method for grading
+  gradeStudent: async (data: {
+    moduleId: string;
+    learnerId: string;
+    value: number;
+    comment?: string;
+  }) => {
+    try {
+      const response = await api.post('/coaches/grades', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error grading student:', error);
+      throw error;
     }
   }
 };

@@ -779,7 +779,15 @@ export default function AttendancePage() {
           url.searchParams.delete('justify');
           window.history.pushState({}, '', url);
         }}
-        attendance={selectedAttendance}
+        attendance={selectedAttendance ? { 
+          ...selectedAttendance, 
+          status: selectedAttendance.status || "", 
+          justification: selectedAttendance.justification || "", 
+          learner: {
+            ...selectedAttendance.learner,
+            referential: selectedAttendance.learner.referential?.name || undefined
+          }
+        } : null}
         onApprove={async (id, comment) => {
           try {
             await handleStatusUpdate(id, 'APPROVED', comment);

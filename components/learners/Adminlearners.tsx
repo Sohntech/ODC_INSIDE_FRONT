@@ -3,14 +3,13 @@
 import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { learnersAPI, promotionsAPI, type Learner, type Promotion } from "@/lib/api"
-import { Plus, Search, Download, Users, Grid, List, Filter, XCircle } from "lucide-react"
+import { Plus, Search, DownloadIcon, Users } from "lucide-react"
 import LearnerCard from "@/components/dashboard/LearnerCard"
 import Pagination from "@/components/common/Pagination"
 import AddLearnerModal from "@/components/modals/AddLearnerModal"
 import { toast } from "sonner"
 import { Button } from "@headlessui/react"
 import { LearnerFormSubmitData } from "@/lib/types"
-import { motion } from "framer-motion"
 
 export default function LearnersPage() {
   const [learners, setLearners] = useState<Learner[]>([])
@@ -23,10 +22,9 @@ export default function LearnersPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(12) // Increased from 10 to 12 for better grid layout
+  const [itemsPerPage, setItemsPerPage] = useState(10)
   const [showAddModal, setShowAddModal] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showFilters, setShowFilters] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false) 
 
   const fetchData = async () => {
     try {
@@ -99,22 +97,22 @@ export default function LearnersPage() {
   const getReferentialBadgeClass = (referentialName: string) => {
     switch (referentialName) {
       case "AWS & DevOps":
-        return "bg-gradient-to-r from-orange-100 to-yellow-100 text-orange-800 px-3 py-1 w-fit rounded-lg font-medium"
+        return "bg-orange-100 text-orange-800 px-3 py-1 w-fit  rounded-lg"
 
       case "Développement web/mobile":
-        return "bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 px-3 py-1 rounded-lg font-medium"
+        return "bg-green-100 text-green-800 px-3 py-1 rounded-lg"
 
       case "Assistanat Digital (Hackeuse)":
-        return "bg-gradient-to-r from-pink-100 to-rose-100 text-pink-800 px-3 py-1 rounded-lg font-medium"
+        return "bg-pink-100 text-pink-800 px-3 py-1 rounded-lg"
 
       case "Développement data":
-        return "bg-gradient-to-r from-purple-100 to-violet-100 text-purple-800 px-3 py-1 rounded-lg font-medium"
+        return "bg-purple-100 text-purple-800 px-3 py-1 rounded-lg"
 
       case "Référent digital":
-        return "bg-gradient-to-r from-blue-100 to-sky-100 text-blue-800 px-3 py-1 rounded-lg font-medium"
+        return "bg-blue-100 text-blue-800 px-3 py-1 rounded-lg"
 
       default:
-        return "bg-gradient-to-r from-gray-100 to-slate-100 text-gray-800 px-3 py-1 rounded-lg font-medium"
+        return "bg-gray-100 text-gray-800 px-3 py-1 rounded-lg"
     }
   }
 
@@ -145,17 +143,17 @@ export default function LearnersPage() {
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case "ACTIVE":
-        return "bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200"
+        return "bg-green-100 text-green-800 border border-green-200"
       case "WAITING":
-        return "bg-gradient-to-r from-blue-100 to-sky-100 text-blue-800 border border-blue-200"
+        return "bg-blue-100 text-blue-800 border border-blue-200"
       case "ABANDONED":
-        return "bg-gradient-to-r from-red-100 to-rose-100 text-red-800 border border-red-200"
+        return "bg-red-100 text-red-800 border border-red-200"
       case "REPLACEMENT":
-        return "bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-800 border border-yellow-200"
+        return "bg-yellow-100 text-yellow-800 border border-yellow-200"
       case "REPLACED":
-        return "bg-gradient-to-r from-orange-100 to-amber-100 text-orange-800 border border-orange-200"
+        return "bg-orange-100 text-orange-800 border border-orange-200"
       default:
-        return "bg-gradient-to-r from-gray-100 to-slate-100 text-gray-800 border border-gray-200"
+        return "bg-gray-100 text-gray-800 border border-gray-200"
     }
   }
 
@@ -212,18 +210,6 @@ export default function LearnersPage() {
 
   const handleItemsPerPageChange = (newItemsPerPage: number) => {
     setItemsPerPage(newItemsPerPage)
-  }
-
-  const resetFilters = () => {
-    setSearchQuery("")
-    setStatusFilter(["ACTIVE", "REPLACEMENT"])
-    setReferentialFilter("")
-    const activePromotion = promotions.find((p) => p.status === "ACTIVE")
-    if (activePromotion) {
-      setPromotionFilter(activePromotion.id)
-    } else {
-      setPromotionFilter("")
-    }
   }
 
   async function handleAddLearner(data: LearnerFormSubmitData) {
@@ -296,258 +282,216 @@ export default function LearnersPage() {
     }
   }
 
-  const activeFiltersCount = 
-    (statusFilter.length < 5 ? 1 : 0) + 
-    (promotionFilter ? 1 : 0) + 
-    (referentialFilter ? 1 : 0) +
-    (searchQuery ? 1 : 0);
-
   return (
-    <div className="pb-12">
-      {/* Page header with modern styling */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 bg-gradient-to-r from-orange-500 to-amber-500 p-6 rounded-2xl text-white shadow-lg">
+    <div>
+      {/* Page header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold">
-            <span className="inline-block mr-2">💫</span>
-            Apprenants
-          </h1>
-          <p className="text-orange-100 mt-1">Gérer votre communauté d'apprenants</p>
+          <h1 className="text-2xl font-bold text-gray-800">Apprenants</h1>
+          <p className="text-gray-600">Gérer les apprenants de l'académie</p>
         </div>
 
-        <div className="mt-4 md:mt-0 flex items-center gap-3">
-          <div className="bg-white/20 backdrop-blur-sm py-1 px-3 rounded-full text-sm font-medium">
-            {filteredLearners.length} apprenants
-          </div>
+        <div className="mt-4 md:mt-0">
           <Button
             onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center px-4 py-2 bg-white text-orange-600 rounded-full hover:bg-orange-50 transition-colors shadow-md font-medium"
+            className="inline-flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
           >
             <Plus size={18} className="mr-2" />
-            Ajouter
+            Ajouter un apprenant
           </Button>
         </div>
       </div>
 
-      {/* Search and filters - modern design with expandable filter section */}
-      <div className="mb-6 bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
-        <div className="flex flex-wrap items-center gap-4">
-          {/* Search - with modern styling */}
-          <div className="flex-grow md:flex-grow-0 md:w-1/3 lg:w-1/4 relative">
+      {/* Search and filters */}
+      <div className="mb-6 bg-white rounded-lg shadow-sm p-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Search - with reduced width */}
+          <div className="md:w-1/4 relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search size={18} className="text-orange-400" />
+              <Search size={18} className="text-gray-400" />
             </div>
             <input
               type="text"
-              placeholder="Rechercher un apprenant..."
-              className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-gray-50"
+              placeholder="Rechercher..."
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
-          {/* Toggle filters button */}
-          <button 
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-700 transition-all duration-200"
-          >
-            <Filter size={16} />
-            <span>Filtres</span>
-            {activeFiltersCount > 0 && (
-              <span className="inline-flex items-center justify-center w-6 h-6 bg-orange-500 text-white text-xs font-medium rounded-full">
-                {activeFiltersCount}
-              </span>
-            )}
-          </button>
+          {/* Referential filter */}
+          <div className="w-full md:w-48">
+            <select
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              value={referentialFilter}
+              onChange={(e) => setReferentialFilter(e.target.value)}
+            >
+              <option value="">Tous les référentiels</option>
+              {uniqueReferentials.map((ref) => (
+                <option key={ref?.id} value={ref?.id}>
+                  {getReferentialAlias(ref?.name || "")}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          {/* View options with modern toggle */}
-          <div className="flex rounded-full overflow-hidden border border-gray-200 ml-auto">
+          {/* Status filter */}
+          <div className="w-full md:w-48">
+            <select
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              value={statusFilter}
+              onChange={(e) => {
+                const options = e.target.selectedOptions
+                const values = Array.from(options).map((option) => option.value)
+                setStatusFilter(values)
+              }}
+              multiple={true}
+              size={1}
+              style={{ height: "42px" }}
+            >
+              {statusOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Promotion filter */}
+          <div className="w-full md:w-48">
+            <select
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              value={promotionFilter}
+              onChange={(e) => setPromotionFilter(e.target.value)}
+            >
+              <option value="">Toutes les promotions</option>
+              {promotions
+                .sort((a, b) => (b.status === "ACTIVE" ? 1 : -1))
+                .map((promotion) => (
+                  <option key={promotion.id} value={promotion.id}>
+                    {promotion.name} {promotion.status === "ACTIVE" ? "(Active)" : ""}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          {/* View options */}
+          <div className="flex border rounded-lg overflow-hidden">
             <button
-              className={`p-2 flex items-center justify-center transition-all duration-200 ${view === "grid" ? "bg-orange-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"}`}
+              className={`px-3 py-2 ${view === "grid" ? "bg-orange-500 text-white" : "bg-white text-gray-700"}`}
               onClick={() => setView("grid")}
             >
-              <Grid size={16} />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="lucide lucide-layout-grid"
+              >
+                <rect width="7" height="7" x="3" y="3" rx="1" />
+                <rect width="7" height="7" x="14" y="3" rx="1" />
+                <rect width="7" height="7" x="14" y="14" rx="1" />
+                <rect width="7" height="7" x="3" y="14" rx="1" />
+              </svg>
             </button>
             <button
-              className={`p-2 flex items-center justify-center transition-all duration-200 ${view === "list" ? "bg-orange-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"}`}
+              className={`px-3 py-2 ${view === "list" ? "bg-orange-500 text-white" : "bg-white text-gray-700"}`}
               onClick={() => setView("list")}
             >
-              <List size={16} />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="lucide lucide-list"
+              >
+                <line x1="8" x2="21" y1="6" y2="6" />
+                <line x1="8" x2="21" y1="12" y2="12" />
+                <line x1="8" x2="21" y1="18" y2="18" />
+                <line x1="3" x2="3.01" y1="6" y2="6" />
+                <line x1="3" x2="3.01" y1="12" y2="12" />
+                <line x1="3" x2="3.01" y1="18" y2="18" />
+              </svg>
             </button>
           </div>
 
           {/* Export button */}
-          <button className="flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 transition-all duration-200 rounded-full text-gray-700">
-            <Download size={16} className="mr-2" />
+          <button className="flex items-center px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+            <DownloadIcon size={18} className="mr-2" />
             Exporter
           </button>
         </div>
-
-        {/* Expandable filters section */}
-        {showFilters && (
-          <motion.div 
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="mt-4 pt-4 border-t border-gray-100"
-          >
-            <div className="flex flex-wrap gap-4">
-              {/* Referential filter */}
-              <div className="w-full md:w-48">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Référentiel</label>
-                <select
-                  className="block w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  value={referentialFilter}
-                  onChange={(e) => setReferentialFilter(e.target.value)}
-                >
-                  <option value="">Tous les référentiels</option>
-                  {uniqueReferentials.map((ref) => (
-                    <option key={ref?.id} value={ref?.id}>
-                      {getReferentialAlias(ref?.name || "")}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Status filter */}
-              <div className="w-full md:w-48">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
-                <select
-                  className="block w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  value={statusFilter}
-                  onChange={(e) => {
-                    const options = e.target.selectedOptions
-                    const values = Array.from(options).map((option) => option.value)
-                    setStatusFilter(values)
-                  }}
-                  multiple={true}
-                  size={1}
-                  style={{ height: "42px" }}
-                >
-                  {statusOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Promotion filter */}
-              <div className="w-full md:w-48">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Promotion</label>
-                <select
-                  className="block w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  value={promotionFilter}
-                  onChange={(e) => setPromotionFilter(e.target.value)}
-                >
-                  <option value="">Toutes les promotions</option>
-                  {promotions
-                    .sort((a, b) => (b.status === "ACTIVE" ? 1 : -1))
-                    .map((promotion) => (
-                      <option key={promotion.id} value={promotion.id}>
-                        {promotion.name} {promotion.status === "ACTIVE" ? "(Active)" : ""}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              {/* Reset filters button */}
-              <div className="flex items-end">
-                <button
-                  onClick={resetFilters}
-                  className="flex items-center px-4 py-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
-                >
-                  <XCircle size={16} className="mr-2" />
-                  Réinitialiser
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
       </div>
 
-      {/* Content with modern styling */}
+      {/* Content */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {[...Array(8)].map((_, i) => (
-            <div key={i} className="bg-white rounded-xl shadow-sm p-4 h-32 animate-pulse border border-gray-100">
+            <div key={i} className="bg-white rounded-lg shadow-sm p-4 h-32 animate-pulse">
               <div className="flex items-center space-x-4">
                 <div className="rounded-full bg-gray-200 h-12 w-12"></div>
                 <div className="space-y-2 flex-1">
-                  <div className="h-4 bg-gray-200 rounded-full w-3/4"></div>
-                  <div className="h-4 bg-gray-200 rounded-full w-1/2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
                 </div>
               </div>
               <div className="mt-4 space-y-2">
-                <div className="h-4 bg-gray-200 rounded-full w-full"></div>
-                <div className="h-4 bg-gray-200 rounded-full w-3/4"></div>
+                <div className="h-4 bg-gray-200 rounded w-full"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
               </div>
             </div>
           ))}
         </div>
       ) : error ? (
-        <div className="bg-red-50 text-red-600 p-6 rounded-xl border border-red-100 flex items-center">
-          <div className="mr-4 bg-red-100 rounded-full p-2">
-            <XCircle size={24} className="text-red-500" />
-          </div>
-          <div>
-            <h3 className="font-medium">Une erreur est survenue</h3>
-            <p>{error}</p>
-          </div>
-        </div>
+        <div className="bg-red-50 text-red-600 p-4 rounded-lg">{error}</div>
       ) : filteredLearners.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100">
-          <div className="mx-auto w-24 h-24 bg-orange-50 rounded-full flex items-center justify-center mb-6">
-            <Users size={40} className="text-orange-400" />
+        <div className="text-center py-12">
+          <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <Users size={40} className="text-gray-400" />
           </div>
-          <h3 className="text-xl font-medium text-gray-800 mb-2">Aucun apprenant trouvé</h3>
-          <p className="text-gray-600 mb-6 max-w-md mx-auto">
-            {searchQuery || statusFilter.length < 5 || promotionFilter || referentialFilter
+          <h3 className="text-lg font-medium text-gray-800 mb-2">Aucun apprenant trouvé</h3>
+          <p className="text-gray-600 mb-6">
+            {searchQuery || statusFilter || promotionFilter
               ? "Essayez d'ajuster vos filtres pour trouver des apprenants"
               : "Il n'y a actuellement aucun apprenant dans la base de données"}
           </p>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-full hover:from-orange-600 hover:to-amber-600 transition-all shadow-md"
+          <Link
+            href="/dashboard/learners/new"
+            className="inline-flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
           >
             <Plus size={18} className="mr-2" />
             Ajouter un apprenant
-          </motion.button>
+          </Link>
         </div>
       ) : view === "grid" ? (
         <>
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-          >
-            {currentItems.map((learner, index) => (
-              <motion.div
-                key={learner.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-              >
-                <LearnerCard learner={learner} />
-              </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {currentItems.map((learner) => (
+              <LearnerCard key={learner.id} learner={learner} />
             ))}
-          </motion.div>
-          <div className="mt-6">
-            <Pagination
-              totalItems={filteredLearners.length}
-              initialItemsPerPage={itemsPerPage}
-              onPageChange={handlePageChange}
-              onItemsPerPageChange={handleItemsPerPageChange}
-            />
           </div>
+          <Pagination
+            totalItems={filteredLearners.length}
+            initialItemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+          />
         </>
       ) : (
         <>
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-            <table className="min-w-full divide-y divide-gray-100">
-              <thead className="bg-gradient-to-r from-orange-500 to-amber-500 text-white">
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-orange-500 text-white">
                 <tr>
                   <th
                     scope="col"
@@ -579,6 +523,7 @@ export default function LearnersPage() {
                   >
                     Référentiel
                   </th>
+
                   <th
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider"
@@ -587,34 +532,26 @@ export default function LearnersPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
-                {currentItems.map((learner, index) => {
+              <tbody className="bg-white divide-y divide-gray-200">
+                {currentItems.map((learner) => {
                   // Find the promotion this learner belongs to
                   const promotion = promotions.find((p) => p.id === learner.promotionId)
 
                   return (
-                    <motion.tr 
-                      key={learner.id} 
-                      className="hover:bg-orange-50 transition-colors"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.2, delay: index * 0.03 }}
-                    >
+                    <tr key={learner.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Link href={`/dashboard/learners/${learner.id}`} className="flex items-center">
-                          {learner.photoUrl ? (
-                            <div className="flex-shrink-0 h-10 w-10 rounded-full overflow-hidden ring-2 ring-orange-100">
+                          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-medium">
+                            {learner.photoUrl ? (
                               <img
                                 src={learner.photoUrl || "/placeholder.svg"}
                                 alt={`${learner.firstName} ${learner.lastName}`}
-                                className="h-10 w-10 object-cover"
+                                className="h-10 w-10 rounded-full object-cover"
                               />
-                            </div>
-                          ) : (
-                            <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-medium">
-                              {`${learner.firstName.charAt(0)}${learner.lastName.charAt(0)}`}
-                            </div>
-                          )}
+                            ) : (
+                              `${learner.firstName.charAt(0)}${learner.lastName.charAt(0)}`
+                            )}
+                          </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">
                               {learner.firstName} {learner.lastName}
@@ -647,6 +584,7 @@ export default function LearnersPage() {
                           {getReferentialAlias(learner.referential?.name || "Non assigné")}
                         </div>
                       </td>
+
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`px-3 py-1 inline-flex text-xs font-medium rounded-lg ${getStatusBadgeClass(learner.status)}`}
@@ -654,24 +592,20 @@ export default function LearnersPage() {
                           {formatStatusLabel(learner.status)}
                         </span>
                       </td>
-                    </motion.tr>
+                    </tr>
                   )
                 })}
               </tbody>
             </table>
           </div>
-          <div className="mt-6">
-            <Pagination
-              totalItems={filteredLearners.length}
-              initialItemsPerPage={itemsPerPage}
-              onPageChange={handlePageChange}
-              onItemsPerPageChange={handleItemsPerPageChange}
-            />
-          </div>
+          <Pagination
+            totalItems={filteredLearners.length}
+            initialItemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+          />
         </>
       )}
-
-      {/* Stylized and modern modal */}
       <AddLearnerModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
@@ -679,18 +613,6 @@ export default function LearnersPage() {
         referentials={uniqueReferentials}
         onSubmit={handleAddLearner}
       />
-
-      {/* Floating action button for mobile */}
-      <div className="md:hidden fixed bottom-6 right-6">
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={() => setShowAddModal(true)}
-          className="w-14 h-14 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white flex items-center justify-center shadow-lg"
-        >
-          <Plus size={24} />
-        </motion.button>
-      </div>
     </div>
   )
 }

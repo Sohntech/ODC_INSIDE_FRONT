@@ -109,17 +109,17 @@ export default function Header({ toggleSidebar, user: propUser }: HeaderProps) {
     });
   };
 
-  const markAsRead = (id: number) => {
-    setNotifications(notifications.map(n => 
-      n.id === id ? { ...n, read: true } : n
-    ));
-  };
+  // const markAsRead = (id: number) => {
+  //   setNotifications(notifications.map(n => 
+  //     n.id === id ? { ...n, read: true } : n
+  //   ));
+  // };
 
   // Use markNotificationAsRead from useNotifications where necessary
 
-  const removeNotification = (id: number) => {
-    setNotifications(notifications.filter(n => n.id !== id));
-  };
+  // const removeNotification = (id: number) => {
+  //   setNotifications(notifications.filter(n => n.id !== id));
+  // };
 
   const handleLogoutClick = () => {
     setShowLogoutModal(true);
@@ -184,9 +184,9 @@ export default function Header({ toggleSidebar, user: propUser }: HeaderProps) {
   }, [router]);
 
   // Filtrer les notifications pour les demandes de justification
-  const justificationRequests = notifications.filter(
-    n => n.type === 'JUSTIFICATION_REQUEST' && !n.read
-  );
+  // const justificationRequests = notifications.filter(
+  //   n => n.type === 'JUSTIFICATION_REQUEST' && !n.read
+  // );
 
   // Filter justification notifications
   const justificationNotifications = notifications.filter(

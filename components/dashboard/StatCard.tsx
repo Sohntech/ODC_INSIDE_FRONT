@@ -10,7 +10,12 @@ interface StatCardProps {
   change?: string; // e.g. "+5%" or "-3%"
   suffix?: string; // e.g. "jours", "%", etc.
   loading?: boolean;
-  bgColor?: string; // Optional background color
+  bgColor?: string; 
+  trend?: {
+    value: string;
+    label: string;
+    positive: boolean;
+  };// Optional background color
 }
 
 export default function StatCard({ title, value, icon, change, suffix, loading = false }: StatCardProps) {

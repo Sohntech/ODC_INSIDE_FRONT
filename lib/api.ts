@@ -257,6 +257,7 @@ export interface Promotion {
   learnerCount: number;
   referentials: Referential[]; // Change from string[] to Referential[]
   learners?: Learner[];
+  description: string;
 }
 
 export interface Referential {

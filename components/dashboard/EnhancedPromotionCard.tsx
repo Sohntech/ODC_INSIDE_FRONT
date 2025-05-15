@@ -1,5 +1,8 @@
+'use client';
+
 import { PowerIcon, Calendar, Users, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 interface EnhancedPromotionCardProps {
   promotion: {
@@ -48,7 +51,10 @@ const EnhancedPromotionCard = ({ promotion, onToggleStatus }: EnhancedPromotionC
               {getStatusLabel(promotion.status)}
             </span>
             <button
-              onClick={() => onToggleStatus(promotion.id, promotion.status)}
+              onClick={(e) => {
+                e.preventDefault(); // Empêche la navigation lors du clic sur le bouton
+                onToggleStatus(promotion.id, promotion.status);
+              }}
               className={`p-2 rounded-full transition-colors duration-200 ${
                 promotion.status === 'ACTIVE' 
                   ? 'bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700' 
@@ -61,51 +67,51 @@ const EnhancedPromotionCard = ({ promotion, onToggleStatus }: EnhancedPromotionC
           </div>
         </div>
 
-        {/* Card Content */}
-        <div className="mt-12">
-          {/* Header with Image/Year */}
-          <div className="flex items-center mb-4">
-            <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mr-4">
-              {promotion.photoUrl ? (
-                <img 
-                  src={promotion.photoUrl} 
-                  alt={promotion.name}
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-              ) : (
-                <span className="text-orange-600 font-bold">
-                  {getPromotionYear(promotion.startDate)}
-                </span>
-              )}
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800">{promotion.name}</h3>
-              <div className="flex items-center text-sm text-gray-500 mt-1">
-                <Calendar size={14} className="mr-1" />
-                <span>{formatDate(promotion.startDate)} - {formatDate(promotion.endDate)}</span>
+        {/* Lien qui entoure tout le contenu, sauf les boutons d'action */}
+        <Link href={`/dashboard/promotions/${promotion.id}`} className="block">
+          <div className="mt-12">
+            {/* Header with Image/Year */}
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mr-4 relative overflow-hidden">
+                {promotion.photoUrl ? (
+                  <Image 
+                    src={promotion.photoUrl} 
+                    alt={promotion.name}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <span className="text-orange-600 font-bold">
+                    {getPromotionYear(promotion.startDate)}
+                  </span>
+                )}
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">{promotion.name}</h3>
+                <div className="flex items-center text-sm text-gray-500 mt-1">
+                  <Calendar size={14} className="mr-1" />
+                  <span>{formatDate(promotion.startDate)} - {formatDate(promotion.endDate)}</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Stats */}
-          <div className="flex items-center justify-between mb-4 px-4 py-3 bg-gray-50 rounded-lg">
-            <div className="flex items-center text-gray-600">
-              <Users size={16} className="mr-2" />
-              <span className="text-sm font-medium">{promotion.learnerCount} apprenants</span>
+            {/* Stats */}
+            <div className="flex items-center justify-between mb-4 px-4 py-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center text-gray-600">
+                <Users size={16} className="mr-2" />
+                <span className="text-sm font-medium">{promotion.learnerCount} apprenants</span>
+              </div>
+            </div>
+
+            {/* Footer with Link */}
+            <div className="flex justify-end pt-4 border-t border-gray-100">
+              <span className="inline-flex items-center text-orange-500 hover:text-orange-600 font-medium text-sm transition-colors">
+                Voir détails
+                <ChevronRight size={16} className="ml-1" />
+              </span>
             </div>
           </div>
-
-          {/* Footer with Link */}
-          <div className="flex justify-end pt-4 border-t border-gray-100">
-            <Link 
-              href={`/dashboard/promotions/${promotion.id}`}
-              className="inline-flex items-center text-orange-500 hover:text-orange-600 font-medium text-sm transition-colors"
-            >
-              Voir détails
-              <ChevronRight size={16} className="ml-1" />
-            </Link>
-          </div>
-        </div>
+        </Link>
       </div>
     </div>
   );
